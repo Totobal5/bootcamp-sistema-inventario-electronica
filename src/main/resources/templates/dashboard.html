@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Inventario</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>⚡ Inventario</h2>
+            <p id="user-info"></p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard" class="active">
+                <span class="icon">📊</span> Dashboard
+            </a>
+            <a href="/componentes">
+                <span class="icon">🔌</span> Componentes
+            </a>
+            <a href="/placas">
+                <span class="icon">💾</span> Placas
+            </a>
+            <a href="/solicitudes-mecanizado">
+                <span class="icon">⚙️</span> Mecanizado
+            </a>
+            <a href="/solicitudes-armado">
+                <span class="icon">🔧</span> Armado
+            </a>
+            <a href="/tareas">
+                <span class="icon">✓</span> Tareas
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-danger btn-block">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Dashboard</h1>
+            <div class="header-actions">
+                <span id="user-role" class="badge"></span>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Estadísticas -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>🔌 Componentes</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat-number" id="total-componentes">0</div>
+                    <p class="stat-label">Total de componentes</p>
+                    <a href="/componentes" class="btn btn-sm btn-primary">Ver todos</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>💾 Placas</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat-number" id="total-placas">0</div>
+                    <p class="stat-label">Diseños de placas</p>
+                    <a href="/placas" class="btn btn-sm btn-primary">Ver todos</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>⚙️ Mecanizado</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat-number" id="total-mecanizado">0</div>
+                    <p class="stat-label">Solicitudes pendientes</p>
+                    <a href="/solicitudes-mecanizado" class="btn btn-sm btn-warning">Gestionar</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>🔧 Armado</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat-number" id="total-armado">0</div>
+                    <p class="stat-label">Solicitudes activas</p>
+                    <a href="/solicitudes-armado" class="btn btn-sm btn-warning">Gestionar</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>✓ Tareas</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat-number" id="total-tareas">0</div>
+                    <p class="stat-label">Tareas asignadas</p>
+                    <a href="/tareas" class="btn btn-sm btn-success">Ver tareas</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>📚 Documentación</h3>
+                </div>
+                <div class="card-body">
+                    <p class="stat-label">Recursos disponibles</p>
+                    <a href="/swagger-ui.html" target="_blank" class="btn btn-sm btn-info">API Swagger</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad reciente -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📋 Actividad Reciente</h3>
+            </div>
+            <div class="card-body">
+                <div id="recent-activity">
+                    <p class="text-muted">Cargando actividad...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/api-client.js}"></script>
+    <script>
+        // Verificar autenticación
+        checkAuth();
+
+        // Mostrar información del usuario
+        const username = localStorage.getItem('username');
+        const role = localStorage.getItem('role');
+        document.getElementById('user-info').textContent = username;
+        document.getElementById('user-role').textContent = role;
+        document.getElementById('user-role').className = 'badge badge-' + 
+            (role === 'ADMIN' ? 'danger' : role === 'OPERADOR' ? 'warning' : 'info');
+
+        // Cargar estadísticas
+        async function loadStats() {
+            try {
+                // Componentes
+                const componentes = await apiGet('/api/componentes');
+                document.getElementById('total-componentes').textContent = componentes.length;
+
+                // Placas
+                const placas = await apiGet('/api/placas');
+                document.getElementById('total-placas').textContent = placas.length;
+
+                // Solicitudes de mecanizado
+                const mecanizado = await apiGet('/api/solicitudes-mecanizado');
+                const pendientesMec = mecanizado.filter(s => s.estado !== 'COMPLETADO').length;
+                document.getElementById('total-mecanizado').textContent = pendientesMec;
+
+                // Solicitudes de armado
+                const armado = await apiGet('/api/solicitudes-armado');
+                const pendientesArm = armado.filter(s => s.estado !== 'COMPLETADO').length;
+                document.getElementById('total-armado').textContent = pendientesArm;
+
+                // Tareas
+                const tareas = await apiGet('/api/tareas');
+                const tareasActivas = tareas.filter(t => t.estado === 'PENDIENTE' || t.estado === 'EN_PROCESO').length;
+                document.getElementById('total-tareas').textContent = tareasActivas;
+
+                // Mostrar actividad reciente
+                showRecentActivity(componentes, placas, mecanizado);
+
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+                showNotification('Error al cargar estadísticas', 'error');
+            }
+        }
+
+        function showRecentActivity(componentes, placas, solicitudes) {
+            const activityDiv = document.getElementById('recent-activity');
+            let html = '<ul class="activity-list">';
+
+            // Últimos 5 componentes
+            const recentComponents = componentes.slice(-3);
+            recentComponents.forEach(comp => {
+                html += `<li>🔌 Componente creado: <strong>${comp.nombre}</strong></li>`;
+            });
+
+            // Últimas 2 placas
+            const recentPlacas = placas.slice(-2);
+            recentPlacas.forEach(placa => {
+                html += `<li>💾 Placa creada: <strong>${placa.nombre}</strong></li>`;
+            });
+
+            html += '</ul>';
+            activityDiv.innerHTML = html;
+        }
+
+        // Cargar datos al iniciar
+        loadStats();
+
+        // Recargar cada 30 segundos
+        setInterval(loadStats, 30000);
+    </script>
+</body>
+</html>

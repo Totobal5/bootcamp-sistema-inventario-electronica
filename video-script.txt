@@ -1,0 +1,252 @@
+# 🎬 GUION DE VIDEO - TEXTO COMPLETO
+# Duración: 8-10 minutos
+
+## 📍 INTRO (0:00 - 1:00)
+
+Hola, soy [Tu Nombre] y en este video te voy a mostrar mi proyecto final del Bootcamp de Desarrollo Backend con Java y Spring Boot.
+
+Desarrollé un Sistema de Inventario de Componentes Electrónicos completo, que resuelve la gestión integral de stock, diseño de placas PCB, solicitudes de mecanizado y armado, con un sistema de tareas y certificaciones de calidad.
+
+El proyecto resuelve cuatro problemas principales:
+- Control de inventario en tiempo real con validaciones automáticas
+- Trazabilidad completa de solicitudes desde la creación hasta la certificación
+- Validación automática de stock antes de crear solicitudes de armado
+- Gestión centralizada de archivos técnicos como Gerber y certificaciones
+
+---
+
+## 💻 STACK TECNOLÓGICO (1:00 - 2:00)
+
+El proyecto está construido con tecnologías modernas de backend.
+
+En el backend usamos:
+- Java 17, la versión LTS más reciente
+- Spring Boot 3.2.0 con Spring Web para los endpoints REST
+- Spring Security para autenticación con JWT
+- Spring Data JPA con Hibernate para la persistencia
+- Y PostgreSQL 15 como base de datos
+
+Para DevOps:
+- Docker y Docker Compose para contenedorización
+- Railway para deployment en producción
+- Y GitHub Actions para CI/CD
+
+La documentación incluye:
+- Swagger con OpenAPI para documentación interactiva
+- Y 8 guías completas en Markdown que cubren desde instalación hasta deployment
+
+El proyecto sigue una arquitectura en capas clásica con Controller, Service, Repository y Model, lo que facilita el mantenimiento y testing.
+
+---
+
+## 🗄️ MODELO DE DATOS (2:00 - 3:30)
+
+El sistema tiene 8 entidades principales con relaciones complejas.
+
+Las entidades son:
+- Usuario, con tres roles: ADMIN, OPERADOR y CLIENTE
+- ComponenteElectronico, que maneja el inventario
+- Placa, que representa los diseños de PCB
+- PlacaComponente, una tabla intermedia para la relación ManyToMany con cantidad necesaria
+- SolicitudMecanizado, que incluye archivos Gerber versionados
+- SolicitudArmado, con validación automática de stock
+- Tarea, que maneja los estados del workflow
+- Y ArchivoCertificacion, para almacenar PDF e imágenes
+
+Como pueden ver en el código, la entidad Placa tiene una relación ManyToMany con ComponenteElectronico a través de PlacaComponente.
+
+Lo interesante es que PlacaComponente no es solo una tabla intermedia, sino que guarda la cantidad necesaria de cada componente para armar una placa.
+
+Todas las entidades usan Lombok para reducir el boilerplate code, con anotaciones como @Data, @Entity, y @Builder.
+
+Las relaciones son bidireccionales donde es necesario, con cascade types apropiados para mantener la integridad referencial.
+
+---
+
+## 🔐 SEGURIDAD JWT (3:30 - 5:00)
+
+La seguridad está implementada con JWT stateless, lo que significa que no mantenemos sesiones en el servidor.
+
+Los componentes principales son:
+- JwtTokenProvider, que genera y valida los tokens
+- JwtAuthenticationFilter, que intercepta todos los requests
+- UserDetailsServiceImpl, que carga usuarios desde la base de datos
+- Y SecurityConfig, donde configuramos toda la cadena de seguridad
+
+Como pueden ver, el método generateToken crea un token JWT que expira en 24 horas y usa un secret key de 256 bits almacenado en variables de entorno.
+
+En la configuración de seguridad, tenemos endpoints públicos como register y login que no requieren autenticación.
+
+Y todos los demás endpoints están protegidos por roles usando @PreAuthorize.
+
+Por ejemplo:
+- Solo ADMIN puede crear o eliminar componentes
+- Solo OPERADOR puede cambiar estados de tareas
+- Y CLIENTE puede crear solicitudes pero no modificarlas una vez creadas
+
+---
+
+## 🚀 DEMO API SWAGGER (5:00 - 7:30)
+
+Ahora voy a demostrar el workflow completo del sistema usando Swagger UI.
+
+### Autenticación
+
+Primero, voy a registrar un usuario ADMIN.
+
+[Ejecutar POST /api/auth/register]
+
+Como ven, el endpoint devuelve un mensaje de éxito.
+
+Ahora hago login con ese usuario.
+
+[Ejecutar POST /api/auth/login]
+
+El sistema devuelve un token JWT que voy a usar para autenticarme.
+
+Copio el token y lo pego en el botón Authorize aquí arriba.
+
+Ahora todos mis requests incluirán este token automáticamente.
+
+### CRUD de Componentes
+
+Vamos a crear algunos componentes electrónicos.
+
+[POST /api/componentes - Resistencia 10kΩ]
+
+Creo una resistencia con stock de 100 unidades.
+
+[Crear 2-3 componentes más rápido]
+
+Ahora si listo todos los componentes, veo los que acabo de crear.
+
+[GET /api/componentes]
+
+### Crear Placa
+
+Voy a crear una placa que use estos componentes.
+
+[POST /api/placas]
+
+Esta placa necesita 2 resistencias y 1 LED.
+
+El sistema guarda la relación ManyToMany con las cantidades necesarias.
+
+Puedo verificar si hay stock disponible para armar esta placa.
+
+[GET /api/placas/1/verificar-disponibilidad]
+
+Y me dice que sí hay stock suficiente.
+
+### Solicitud de Armado
+
+Para crear una solicitud de armado, primero necesito un usuario CLIENTE.
+
+[Registrar y login como CLIENTE]
+
+Ahora como CLIENTE puedo crear una solicitud para armar 5 placas.
+
+[POST /api/solicitudes-armado]
+
+El sistema automáticamente valida que hay stock suficiente de todos los componentes antes de crear la solicitud.
+
+### Gestión de Tareas
+
+Como OPERADOR, puedo crear tareas asociadas a solicitudes.
+
+[Login como OPERADOR]
+
+[POST /api/tareas]
+
+Y puedo cambiar el estado de la tarea.
+
+[PATCH /api/tareas/1/estado - EN_PROCESO]
+
+El sistema registra automáticamente la fecha de inicio.
+
+[PATCH /api/tareas/1/estado - COMPLETADA]
+
+Y cuando completo la tarea, registra la fecha de finalización.
+
+---
+
+## 💡 CÓDIGO CLAVE (7:30 - 9:00)
+
+Ahora voy a mostrarles algunas partes interesantes del código.
+
+### Validación de Stock
+
+Este método validarStock verifica que cada componente de la placa tenga stock suficiente antes de crear la solicitud.
+
+Itera sobre todos los componentes de la placa, calcula el stock necesario multiplicando la cantidad necesaria por la cantidad de placas a armar, y si no hay suficiente stock, lanza una excepción personalizada.
+
+### Descuento de Stock
+
+El método confirmarArmado es el que realmente descuenta el stock del inventario.
+
+Primero verifica que la solicitud esté en estado correcto, luego itera sobre cada componente y descuenta el stock necesario, y finalmente actualiza el estado a COMPLETADO.
+
+Todo esto ocurre en una transacción, lo que garantiza que si algo falla, no se descuenta parcialmente el stock.
+
+### Manejo de Excepciones
+
+Todas las excepciones se manejan centralizadamente en este GlobalExceptionHandler.
+
+Por ejemplo, cuando no hay stock suficiente, se lanza InsufficientStockException, que se captura aquí y devuelve un error 400 con un mensaje claro en formato JSON.
+
+Esto hace que la API sea consistente y fácil de consumir desde cualquier cliente.
+
+---
+
+## 🐳 DOCKER & DEPLOYMENT (9:00 - 9:30)
+
+El proyecto está completamente dockerizado con multi-stage build.
+
+En la primera etapa, usamos Maven con JDK 17 para compilar el proyecto.
+
+En la segunda etapa, copiamos solo el JAR compilado a una imagen con JRE 17, que es mucho más ligera, aproximadamente 200 MB menos.
+
+También configuramos un usuario no-root por seguridad.
+
+El deployment está en Railway, donde cada push a la rama main despliega automáticamente.
+
+Railway provisiona PostgreSQL automáticamente y genera todas las variables de entorno necesarias.
+
+La aplicación está corriendo en producción y pueden probarla en la URL que aparece en la descripción.
+
+---
+
+## 🎓 DESAFÍOS TÉCNICOS (9:30 - 10:00)
+
+Durante el desarrollo enfrenté varios desafíos técnicos interesantes.
+
+El primero fue manejar relaciones ManyToMany complejas con PlacaComponente guardando cantidad necesaria, y evitar problemas de orphan removal.
+
+Otro desafío fue implementar validación de stock transaccional para evitar race conditions cuando múltiples usuarios crean solicitudes simultáneamente.
+
+El manejo de upload de archivos multipart también fue interesante, especialmente el versionado de archivos Gerber.
+
+Y configurar correctamente JWT Security con el filter chain, CORS, y role-based access control requirió bastante investigación.
+
+Finalmente, resolver problemas de Lombok en Docker con annotation processing fue un aprendizaje importante.
+
+---
+
+## 🎉 CONCLUSIÓN (10:00)
+
+Este proyecto demuestra mis habilidades en desarrollo backend robusto con Spring Boot, implementación de seguridad con JWT y roles, persistencia con JPA y relaciones complejas, documentación completa con 8 guías en Markdown, y DevOps con Docker y deployment.
+
+El proyecto tiene 71 archivos Java, 8 entidades, más de 40 endpoints, 83 KB de documentación, y está 100% funcional en producción.
+
+El código completo está en GitHub en el repositorio que aparece en la descripción.
+
+Pueden probar la API en vivo en la URL de Railway que también está en la descripción.
+
+Gracias por ver el video. Si tienen preguntas, déjenme un comentario y con gusto las respondo.
+
+---
+
+# FIN DEL GUION
+
+Duración estimada: 10 minutos
+Palabras: ~1,000

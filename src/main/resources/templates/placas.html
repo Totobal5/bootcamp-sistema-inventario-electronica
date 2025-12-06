@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placas - Sistema de Inventario</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>⚡ Inventario</h2>
+            <p id="user-info"></p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard">
+                <span class="icon">📊</span> Dashboard
+            </a>
+            <a href="/componentes">
+                <span class="icon">🔌</span> Componentes
+            </a>
+            <a href="/placas" class="active">
+                <span class="icon">💾</span> Placas
+            </a>
+            <a href="/solicitudes-mecanizado">
+                <span class="icon">⚙️</span> Mecanizado
+            </a>
+            <a href="/solicitudes-armado">
+                <span class="icon">🔧</span> Armado
+            </a>
+            <a href="/tareas">
+                <span class="icon">✓</span> Tareas
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-danger btn-block">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>💾 Diseños de Placas</h1>
+            <div class="header-actions">
+                <button onclick="openCreateModal()" class="btn btn-primary">
+                    + Nueva Placa
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de placas -->
+        <div class="card">
+            <div class="card-body">
+                <table class="table" id="placas-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Componentes</th>
+                            <th>Creada</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="placas-tbody">
+                        <tr>
+                            <td colspan="6" class="text-center">Cargando placas...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Crear/Editar Placa -->
+    <div id="placa-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 id="modal-title">Nueva Placa</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="placa-form" onsubmit="handleSubmit(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="nombre">Nombre de la Placa *</label>
+                        <input type="text" id="nombre" required class="form-control"
+                               placeholder="Ej: Placa LED Intermitente">
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcion">Descripción</label>
+                        <textarea id="descripcion" rows="3" class="form-control"
+                                  placeholder="Descripción del diseño de la placa"></textarea>
+                    </div>
+                    
+                    <hr>
+                    <h3>Componentes de la Placa</h3>
+                    <p class="text-muted">Selecciona los componentes y cantidades necesarias</p>
+                    
+                    <div id="componentes-list">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                    
+                    <button type="button" onclick="addComponentRow()" class="btn btn-sm btn-success">
+                        + Agregar Componente
+                    </button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Guardar Placa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ver Detalle Placa -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detail-title">Detalle de Placa</h2>
+                <span class="close" onclick="closeDetailModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="detail-body">
+                <!-- Se llenará dinámicamente -->
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeDetailModal()" class="btn btn-secondary">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/api-client.js}"></script>
+    <script>
+        checkAuth();
+        document.getElementById('user-info').textContent = localStorage.getItem('username');
+
+        let allPlacas = [];
+        let allComponentes = [];
+        let editingId = null;
+        let componentCounter = 0;
+
+        // Cargar componentes disponibles
+        async function loadAvailableComponents() {
+            try {
+                allComponentes = await apiGet('/api/componentes');
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al cargar componentes', 'error');
+            }
+        }
+
+        // Cargar placas
+        async function loadPlacas() {
+            try {
+                allPlacas = await apiGet('/api/placas');
+                renderPlacas(allPlacas);
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al cargar placas', 'error');
+            }
+        }
+
+        function renderPlacas(placas) {
+            const tbody = document.getElementById('placas-tbody');
+            if (placas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay placas registradas</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = placas.map(placa => `
+                <tr>
+                    <td>${placa.id}</td>
+                    <td><strong>${placa.nombre}</strong></td>
+                    <td>${placa.descripcion || '-'}</td>
+                    <td>
+                        <span class="badge badge-info">${placa.componentes.length} componentes</span>
+                    </td>
+                    <td>${formatDate(placa.createdAt)}</td>
+                    <td>
+                        <button onclick="viewDetail(${placa.id})" class="btn btn-sm btn-info">
+                            👁️ Ver
+                        </button>
+                        <button onclick="editPlaca(${placa.id})" class="btn btn-sm btn-warning">
+                            ✏️ Editar
+                        </button>
+                        <button onclick="deletePlaca(${placa.id})" class="btn btn-sm btn-danger">
+                            🗑️ Eliminar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openCreateModal() {
+            editingId = null;
+            componentCounter = 0;
+            document.getElementById('modal-title').textContent = 'Nueva Placa';
+            document.getElementById('placa-form').reset();
+            document.getElementById('componentes-list').innerHTML = '';
+            addComponentRow(); // Agregar primera fila
+            document.getElementById('placa-modal').style.display = 'block';
+        }
+
+        function addComponentRow() {
+            componentCounter++;
+            const div = document.createElement('div');
+            div.className = 'form-row';
+            div.id = `component-row-${componentCounter}`;
+            div.style.marginBottom = '10px';
+            
+            const selectHtml = allComponentes.map(c => 
+                `<option value="${c.id}">${c.nombre} (Stock: ${c.stockActual})</option>`
+            ).join('');
+
+            div.innerHTML = `
+                <div class="form-group" style="flex: 2;">
+                    <select class="form-control component-select" required>
+                        <option value="">Seleccionar componente...</option>
+                        ${selectHtml}
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <input type="number" class="form-control component-quantity" 
+                           min="1" value="1" required placeholder="Cantidad">
+                </div>
+                <div style="flex: 0;">
+                    <button type="button" onclick="removeComponentRow(${componentCounter})" 
+                            class="btn btn-sm btn-danger">🗑️</button>
+                </div>
+            `;
+            
+            document.getElementById('componentes-list').appendChild(div);
+        }
+
+        function removeComponentRow(id) {
+            const row = document.getElementById(`component-row-${id}`);
+            if (row) row.remove();
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            // Recopilar componentes seleccionados
+            const componentes = [];
+            const rows = document.querySelectorAll('#componentes-list .form-row');
+            
+            rows.forEach(row => {
+                const select = row.querySelector('.component-select');
+                const quantity = row.querySelector('.component-quantity');
+                
+                if (select.value && quantity.value) {
+                    componentes.push({
+                        componenteId: parseInt(select.value),
+                        cantidad: parseInt(quantity.value)
+                    });
+                }
+            });
+
+            if (componentes.length === 0) {
+                showNotification('Debe agregar al menos un componente', 'error');
+                return;
+            }
+
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                descripcion: document.getElementById('descripcion').value,
+                componentes: componentes
+            };
+
+            try {
+                if (editingId) {
+                    await apiPut(`/api/placas/${editingId}`, data);
+                    showNotification('Placa actualizada exitosamente', 'success');
+                } else {
+                    await apiPost('/api/placas', data);
+                    showNotification('Placa creada exitosamente', 'success');
+                }
+                closeModal();
+                loadPlacas();
+            } catch (error) {
+                showNotification(error.message || 'Error al guardar placa', 'error');
+            }
+        }
+
+        async function editPlaca(id) {
+            try {
+                const placa = await apiGet(`/api/placas/${id}`);
+                editingId = id;
+                componentCounter = 0;
+                
+                document.getElementById('modal-title').textContent = 'Editar Placa';
+                document.getElementById('nombre').value = placa.nombre;
+                document.getElementById('descripcion').value = placa.descripcion || '';
+                
+                // Limpiar y agregar componentes
+                document.getElementById('componentes-list').innerHTML = '';
+                placa.componentes.forEach(comp => {
+                    addComponentRow();
+                    const lastRow = document.querySelector('#componentes-list .form-row:last-child');
+                    lastRow.querySelector('.component-select').value = comp.componenteId;
+                    lastRow.querySelector('.component-quantity').value = comp.cantidad;
+                });
+                
+                document.getElementById('placa-modal').style.display = 'block';
+            } catch (error) {
+                showNotification('Error al cargar placa', 'error');
+            }
+        }
+
+        async function viewDetail(id) {
+            try {
+                const placa = await apiGet(`/api/placas/${id}`);
+                document.getElementById('detail-title').textContent = placa.nombre;
+                
+                let html = `
+                    <p><strong>Descripción:</strong> ${placa.descripcion || '-'}</p>
+                    <p><strong>Creada:</strong> ${formatDate(placa.createdAt)}</p>
+                    <hr>
+                    <h3>Componentes (${placa.componentes.length})</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Componente</th>
+                                <th>Cantidad</th>
+                                <th>Stock Disponible</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                placa.componentes.forEach(comp => {
+                    html += `
+                        <tr>
+                            <td>${comp.componenteNombre}</td>
+                            <td><strong>${comp.cantidad}</strong></td>
+                            <td>
+                                <span class="badge ${comp.stockDisponible >= comp.cantidad ? 'badge-success' : 'badge-danger'}">
+                                    ${comp.stockDisponible}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                document.getElementById('detail-body').innerHTML = html;
+                document.getElementById('detail-modal').style.display = 'block';
+            } catch (error) {
+                showNotification('Error al cargar detalle', 'error');
+            }
+        }
+
+        async function deletePlaca(id) {
+            if (!confirm('¿Estás seguro de eliminar esta placa?')) return;
+            
+            try {
+                await apiDelete(`/api/placas/${id}`);
+                showNotification('Placa eliminada exitosamente', 'success');
+                loadPlacas();
+            } catch (error) {
+                showNotification('Error al eliminar placa', 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('placa-modal').style.display = 'none';
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').style.display = 'none';
+        }
+
+        // Cargar al iniciar
+        loadAvailableComponents().then(() => {
+            loadPlacas();
+        });
+    </script>
+</body>
+</html>

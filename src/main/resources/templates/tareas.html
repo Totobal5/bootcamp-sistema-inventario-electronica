@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tareas - Sistema de Inventario</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>⚡ Inventario</h2>
+            <p id="user-info"></p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard">
+                <span class="icon">📊</span> Dashboard
+            </a>
+            <a href="/componentes">
+                <span class="icon">🔌</span> Componentes
+            </a>
+            <a href="/placas">
+                <span class="icon">💾</span> Placas
+            </a>
+            <a href="/solicitudes-mecanizado">
+                <span class="icon">⚙️</span> Mecanizado
+            </a>
+            <a href="/solicitudes-armado">
+                <span class="icon">🔧</span> Armado
+            </a>
+            <a href="/tareas" class="active">
+                <span class="icon">✓</span> Tareas
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-danger btn-block">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>✓ Mis Tareas</h1>
+            <div class="header-actions">
+                <span id="tareas-pendientes" class="badge badge-warning"></span>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card">
+            <div class="card-body">
+                <div class="filter-row">
+                    <input type="text" id="search-input" placeholder="Buscar por título..."
+                           oninput="filterTareas()" class="form-control">
+                    <select id="estado-filter" onchange="filterTareas()" class="form-control">
+                        <option value="">Todos los estados</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="EN_PROCESO">En Proceso</option>
+                        <option value="PAUSADO">Pausado</option>
+                        <option value="COMPLETADO">Completado</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de tareas -->
+        <div class="card">
+            <div class="card-body">
+                <table class="table" id="tareas-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Solicitud Armado</th>
+                            <th>Estado</th>
+                            <th>Prioridad</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Límite</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tareas-tbody">
+                        <tr>
+                            <td colspan="8" class="text-center">Cargando tareas...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Detalle -->
+    <div id="detalle-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detalle de Tarea</h3>
+                <button onclick="closeDetalleModal()" class="close-btn">&times;</button>
+            </div>
+            <div id="detalle-content" class="modal-body">
+                <!-- Se llenará dinámicamente -->
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeDetalleModal()" class="btn btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/api-client.js}"></script>
+    <script>
+        let allTareas = [];
+        const userRole = localStorage.getItem('role');
+        const username = localStorage.getItem('username');
+
+        async function loadTareas() {
+            try {
+                // Operadores ven solo sus tareas, Admin ve todas
+                const endpoint = userRole === 'OPERADOR' ? '/api/tareas/mis-tareas' : '/api/tareas';
+                const data = await apiGet(endpoint);
+                allTareas = data;
+                renderTareas(data);
+                updatePendientesCount(data);
+            } catch (error) {
+                showNotification('Error al cargar tareas', 'error');
+            }
+        }
+
+        function updatePendientesCount(tareas) {
+            const pendientes = tareas.filter(t => t.estado === 'PENDIENTE' || t.estado === 'EN_PROCESO').length;
+            const badge = document.getElementById('tareas-pendientes');
+            badge.textContent = `${pendientes} pendiente${pendientes !== 1 ? 's' : ''}`;
+        }
+
+        function renderTareas(tareas) {
+            const tbody = document.getElementById('tareas-tbody');
+            
+            if (tareas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay tareas asignadas</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = tareas.map(tarea => `
+                <tr>
+                    <td>${tarea.id}</td>
+                    <td>${tarea.titulo}</td>
+                    <td>Solicitud #${tarea.solicitudArmadoId}</td>
+                    <td>
+                        <span class="badge badge-${getEstadoBadge(tarea.estado)}">
+                            ${tarea.estado.replace('_', ' ')}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-${getPrioridadBadge(tarea.prioridad)}">
+                            ${tarea.prioridad || 'MEDIA'}
+                        </span>
+                    </td>
+                    <td>${tarea.fechaInicio ? new Date(tarea.fechaInicio).toLocaleDateString() : '-'}</td>
+                    <td>${tarea.fechaLimite ? new Date(tarea.fechaLimite).toLocaleDateString() : '-'}</td>
+                    <td>
+                        <button onclick="verDetalle(${tarea.id})" class="btn btn-sm btn-info">
+                            👁️ Ver
+                        </button>
+                        ${getAccionButtons(tarea)}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getEstadoBadge(estado) {
+            const badges = {
+                'PENDIENTE': 'warning',
+                'EN_PROCESO': 'info',
+                'PAUSADO': 'secondary',
+                'COMPLETADO': 'success'
+            };
+            return badges[estado] || 'secondary';
+        }
+
+        function getPrioridadBadge(prioridad) {
+            const badges = {
+                'ALTA': 'danger',
+                'MEDIA': 'warning',
+                'BAJA': 'info'
+            };
+            return badges[prioridad] || 'warning';
+        }
+
+        function getAccionButtons(tarea) {
+            const isAssignedToMe = tarea.operadorNombre === username;
+            
+            if (!isAssignedToMe && userRole !== 'ADMIN') {
+                return '';
+            }
+
+            let buttons = '';
+            
+            if (tarea.estado === 'PENDIENTE') {
+                buttons += `<button onclick="cambiarEstado(${tarea.id}, 'EN_PROCESO')" class="btn btn-sm btn-primary">Iniciar</button>`;
+            }
+            
+            if (tarea.estado === 'EN_PROCESO') {
+                buttons += `<button onclick="cambiarEstado(${tarea.id}, 'PAUSADO')" class="btn btn-sm btn-secondary">Pausar</button>`;
+                buttons += `<button onclick="cambiarEstado(${tarea.id}, 'COMPLETADO')" class="btn btn-sm btn-success">Completar</button>`;
+            }
+            
+            if (tarea.estado === 'PAUSADO') {
+                buttons += `<button onclick="cambiarEstado(${tarea.id}, 'EN_PROCESO')" class="btn btn-sm btn-primary">Reanudar</button>`;
+            }
+            
+            return buttons;
+        }
+
+        function filterTareas() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const estado = document.getElementById('estado-filter').value;
+
+            const filtered = allTareas.filter(tarea => {
+                const matchesSearch = tarea.titulo.toLowerCase().includes(searchTerm) ||
+                                     (tarea.descripcion && tarea.descripcion.toLowerCase().includes(searchTerm));
+                const matchesEstado = !estado || tarea.estado === estado;
+                return matchesSearch && matchesEstado;
+            });
+
+            renderTareas(filtered);
+        }
+
+        async function verDetalle(id) {
+            try {
+                const tarea = await apiGet(`/api/tareas/${id}`);
+                const content = `
+                    <div class="detail-grid">
+                        <div><strong>ID:</strong> ${tarea.id}</div>
+                        <div><strong>Título:</strong> ${tarea.titulo}</div>
+                        <div><strong>Solicitud de Armado:</strong> #${tarea.solicitudArmadoId}</div>
+                        <div><strong>Operador:</strong> ${tarea.operadorNombre}</div>
+                        <div><strong>Estado:</strong> <span class="badge badge-${getEstadoBadge(tarea.estado)}">${tarea.estado}</span></div>
+                        <div><strong>Prioridad:</strong> <span class="badge badge-${getPrioridadBadge(tarea.prioridad)}">${tarea.prioridad || 'MEDIA'}</span></div>
+                        <div><strong>Descripción:</strong> ${tarea.descripcion || '-'}</div>
+                        <div><strong>Fecha Inicio:</strong> ${tarea.fechaInicio ? new Date(tarea.fechaInicio).toLocaleString() : '-'}</div>
+                        <div><strong>Fecha Límite:</strong> ${tarea.fechaLimite ? new Date(tarea.fechaLimite).toLocaleString() : '-'}</div>
+                        <div><strong>Fecha Creación:</strong> ${new Date(tarea.createdAt).toLocaleString()}</div>
+                        <div><strong>Última Actualización:</strong> ${new Date(tarea.updatedAt).toLocaleString()}</div>
+                    </div>
+                `;
+                document.getElementById('detalle-content').innerHTML = content;
+                document.getElementById('detalle-modal').style.display = 'block';
+            } catch (error) {
+                showNotification('Error al cargar detalle', 'error');
+            }
+        }
+
+        async function cambiarEstado(id, nuevoEstado) {
+            try {
+                await apiPut(`/api/tareas/${id}/estado`, { estado: nuevoEstado });
+                showNotification('Estado de tarea actualizado', 'success');
+                loadTareas();
+            } catch (error) {
+                showNotification('Error al cambiar estado', 'error');
+            }
+        }
+
+        function closeDetalleModal() {
+            document.getElementById('detalle-modal').style.display = 'none';
+        }
+
+        // Cargar al iniciar
+        loadTareas();
+    </script>
+</body>
+</html>

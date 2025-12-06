@@ -1,0 +1,41 @@
+# Directorios de compilación
+target/
+!target/*.jar
+*.class
+
+# Archivos de configuración local
+.env
+.env.local
+*.log
+
+# Directorios de IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Node modules (si hubiera frontend)
+node_modules/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Documentación
+*.md
+!README.md
+
+# Uploads y datos temporales
+uploads/
+*.tmp

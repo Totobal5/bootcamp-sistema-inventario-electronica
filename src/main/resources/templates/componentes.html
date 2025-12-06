@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Componentes - Sistema de Inventario</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>⚡ Inventario</h2>
+            <p id="user-info"></p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard">
+                <span class="icon">📊</span> Dashboard
+            </a>
+            <a href="/componentes" class="active">
+                <span class="icon">🔌</span> Componentes
+            </a>
+            <a href="/placas">
+                <span class="icon">💾</span> Placas
+            </a>
+            <a href="/solicitudes-mecanizado">
+                <span class="icon">⚙️</span> Mecanizado
+            </a>
+            <a href="/solicitudes-armado">
+                <span class="icon">🔧</span> Armado
+            </a>
+            <a href="/tareas">
+                <span class="icon">✓</span> Tareas
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-danger btn-block">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>🔌 Componentes Electrónicos</h1>
+            <div class="header-actions">
+                <button onclick="openCreateModal()" class="btn btn-primary">
+                    + Nuevo Componente
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card">
+            <div class="card-body">
+                <div class="filter-row">
+                    <input type="text" id="search-input" placeholder="Buscar por nombre..."
+                           oninput="filterComponents()" class="form-control">
+                    <select id="category-filter" onchange="filterComponents()" class="form-control">
+                        <option value="">Todas las categorías</option>
+                        <option value="RESISTENCIA">Resistencias</option>
+                        <option value="CONDENSADOR">Condensadores</option>
+                        <option value="TRANSISTOR">Transistores</option>
+                        <option value="DIODO">Diodos</option>
+                        <option value="LED">LEDs</option>
+                        <option value="CIRCUITO_INTEGRADO">Circuitos Integrados</option>
+                        <option value="CONECTORES">Conectores</option>
+                        <option value="OTROS">Otros</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de componentes -->
+        <div class="card">
+            <div class="card-body">
+                <table class="table" id="componentes-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Stock</th>
+                            <th>Precio Unit.</th>
+                            <th>Ubicación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="componentes-tbody">
+                        <tr>
+                            <td colspan="7" class="text-center">Cargando componentes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Crear/Editar -->
+    <div id="component-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Nuevo Componente</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="component-form" onsubmit="handleSubmit(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="nombre">Nombre *</label>
+                        <input type="text" id="nombre" required class="form-control"
+                               placeholder="Resistencia 10kΩ">
+                    </div>
+                    <div class="form-group">
+                        <label for="categoria">Categoría *</label>
+                        <select id="categoria" required class="form-control">
+                            <option value="RESISTENCIA">Resistencia</option>
+                            <option value="CONDENSADOR">Condensador</option>
+                            <option value="TRANSISTOR">Transistor</option>
+                            <option value="DIODO">Diodo</option>
+                            <option value="LED">LED</option>
+                            <option value="CIRCUITO_INTEGRADO">Circuito Integrado</option>
+                            <option value="CONECTORES">Conectores</option>
+                            <option value="OTROS">Otros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcion">Descripción</label>
+                        <textarea id="descripcion" rows="3" class="form-control"
+                                  placeholder="Descripción del componente"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="stockActual">Stock Actual *</label>
+                            <input type="number" id="stockActual" required min="0" 
+                                   class="form-control" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="stockMinimo">Stock Mínimo *</label>
+                            <input type="number" id="stockMinimo" required min="0" 
+                                   class="form-control" value="10">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="precioUnitario">Precio Unitario *</label>
+                            <input type="number" id="precioUnitario" required min="0" step="0.01"
+                                   class="form-control" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="ubicacion">Ubicación</label>
+                            <input type="text" id="ubicacion" class="form-control"
+                                   placeholder="Estante A-12">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:src="@{/js/api-client.js}"></script>
+    <script>
+        checkAuth();
+        document.getElementById('user-info').textContent = localStorage.getItem('username');
+
+        let allComponents = [];
+        let editingId = null;
+
+        // Cargar componentes
+        async function loadComponents() {
+            try {
+                allComponents = await apiGet('/api/componentes');
+                renderComponents(allComponents);
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al cargar componentes', 'error');
+            }
+        }
+
+        function renderComponents(components) {
+            const tbody = document.getElementById('componentes-tbody');
+            if (components.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay componentes registrados</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = components.map(comp => `
+                <tr>
+                    <td>${comp.id}</td>
+                    <td><strong>${comp.nombre}</strong></td>
+                    <td><span class="badge badge-info">${comp.categoria}</span></td>
+                    <td>
+                        <span class="badge ${comp.stockActual < comp.stockMinimo ? 'badge-danger' : 'badge-success'}">
+                            ${comp.stockActual}
+                        </span>
+                        ${comp.stockActual < comp.stockMinimo ? '⚠️' : ''}
+                    </td>
+                    <td>$${comp.precioUnitario.toFixed(2)}</td>
+                    <td>${comp.ubicacion || '-'}</td>
+                    <td>
+                        <button onclick="editComponent(${comp.id})" class="btn btn-sm btn-warning">
+                            ✏️ Editar
+                        </button>
+                        <button onclick="deleteComponent(${comp.id})" class="btn btn-sm btn-danger">
+                            🗑️ Eliminar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterComponents() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const category = document.getElementById('category-filter').value;
+
+            const filtered = allComponents.filter(comp => {
+                const matchesSearch = comp.nombre.toLowerCase().includes(searchTerm) ||
+                                    (comp.descripcion && comp.descripcion.toLowerCase().includes(searchTerm));
+                const matchesCategory = !category || comp.categoria === category;
+                return matchesSearch && matchesCategory;
+            });
+
+            renderComponents(filtered);
+        }
+
+        function openCreateModal() {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Nuevo Componente';
+            document.getElementById('component-form').reset();
+            document.getElementById('component-modal').style.display = 'block';
+        }
+
+        async function editComponent(id) {
+            try {
+                const comp = await apiGet(`/api/componentes/${id}`);
+                editingId = id;
+                document.getElementById('modal-title').textContent = 'Editar Componente';
+                document.getElementById('nombre').value = comp.nombre;
+                document.getElementById('categoria').value = comp.categoria;
+                document.getElementById('descripcion').value = comp.descripcion || '';
+                document.getElementById('stockActual').value = comp.stockActual;
+                document.getElementById('stockMinimo').value = comp.stockMinimo;
+                document.getElementById('precioUnitario').value = comp.precioUnitario;
+                document.getElementById('ubicacion').value = comp.ubicacion || '';
+                document.getElementById('component-modal').style.display = 'block';
+            } catch (error) {
+                showNotification('Error al cargar componente', 'error');
+            }
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                categoria: document.getElementById('categoria').value,
+                descripcion: document.getElementById('descripcion').value,
+                stockActual: parseInt(document.getElementById('stockActual').value),
+                stockMinimo: parseInt(document.getElementById('stockMinimo').value),
+                precioUnitario: parseFloat(document.getElementById('precioUnitario').value),
+                ubicacion: document.getElementById('ubicacion').value
+            };
+
+            try {
+                if (editingId) {
+                    await apiPut(`/api/componentes/${editingId}`, data);
+                    showNotification('Componente actualizado exitosamente', 'success');
+                } else {
+                    await apiPost('/api/componentes', data);
+                    showNotification('Componente creado exitosamente', 'success');
+                }
+                closeModal();
+                loadComponents();
+            } catch (error) {
+                showNotification('Error al guardar componente', 'error');
+            }
+        }
+
+        async function deleteComponent(id) {
+            if (!confirm('¿Estás seguro de eliminar este componente?')) return;
+            
+            try {
+                await apiDelete(`/api/componentes/${id}`);
+                showNotification('Componente eliminado exitosamente', 'success');
+                loadComponents();
+            } catch (error) {
+                showNotification('Error al eliminar componente', 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('component-modal').style.display = 'none';
+        }
+
+        // Cargar al iniciar
+        loadComponents();
+    </script>
+</body>
+</html>

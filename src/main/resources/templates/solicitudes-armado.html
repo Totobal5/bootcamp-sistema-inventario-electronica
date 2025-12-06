@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitudes de Armado - Sistema de Inventario</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>⚡ Inventario</h2>
+            <p id="user-info"></p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard">
+                <span class="icon">📊</span> Dashboard
+            </a>
+            <a href="/componentes">
+                <span class="icon">🔌</span> Componentes
+            </a>
+            <a href="/placas">
+                <span class="icon">💾</span> Placas
+            </a>
+            <a href="/solicitudes-mecanizado">
+                <span class="icon">⚙️</span> Mecanizado
+            </a>
+            <a href="/solicitudes-armado" class="active">
+                <span class="icon">🔧</span> Armado
+            </a>
+            <a href="/tareas">
+                <span class="icon">✓</span> Tareas
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-danger btn-block">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>🔧 Solicitudes de Armado</h1>
+            <div class="header-actions">
+                <button onclick="openCreateModal()" class="btn btn-primary" id="btn-nueva-solicitud">
+                    + Nueva Solicitud
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card">
+            <div class="card-body">
+                <div class="filter-row">
+                    <input type="text" id="search-input" placeholder="Buscar por placa..."
+                           oninput="filterSolicitudes()" class="form-control">
+                    <select id="estado-filter" onchange="filterSolicitudes()" class="form-control">
+                        <option value="">Todos los estados</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="EN_PROCESO">En Proceso</option>
+                        <option value="COMPLETADO">Completado</option>
+                        <option value="CANCELADO">Cancelado</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de solicitudes -->
+        <div class="card">
+            <div class="card-body">
+                <table class="table" id="solicitudes-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Placa</th>
+                            <th>Cliente</th>
+                            <th>Cantidad</th>
+                            <th>Estado</th>
+                            <th>Operador</th>
+                            <th>Fecha Creación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="solicitudes-tbody">
+                        <tr>
+                            <td colspan="8" class="text-center">Cargando solicitudes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Crear -->
+    <div id="solicitud-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nueva Solicitud de Armado</h3>
+                <button onclick="closeModal()" class="close-btn">&times;</button>
+            </div>
+            <form id="solicitud-form" onsubmit="handleSubmit(event)">
+                <div class="form-group">
+                    <label for="placaId">Placa *</label>
+                    <select id="placaId" required class="form-control">
+                        <option value="">Seleccione una placa...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cantidad">Cantidad *</label>
+                    <input type="number" id="cantidad" required min="1" value="1" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="observaciones">Observaciones</label>
+                    <textarea id="observaciones" rows="3" class="form-control"></textarea>
+                </div>
+                <div class="alert alert-info">
+                    <strong>Nota:</strong> El sistema verificará automáticamente que haya suficiente stock de componentes antes de crear la solicitud.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Solicitud</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ver Detalle -->
+    <div id="detalle-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detalle de Solicitud</h3>
+                <button onclick="closeDetalleModal()" class="close-btn">&times;</button>
+            </div>
+            <div id="detalle-content" class="modal-body">
+                <!-- Se llenará dinámicamente -->
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeDetalleModal()" class="btn btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/api-client.js}"></script>
+    <script>
+        let allSolicitudes = [];
+        let allPlacas = [];
+        const userRole = localStorage.getItem('role');
+
+        // Mostrar botón solo para CLIENTE
+        if (userRole !== 'CLIENTE') {
+            document.getElementById('btn-nueva-solicitud').style.display = 'none';
+        }
+
+        async function loadPlacas() {
+            try {
+                const data = await apiGet('/api/placas');
+                allPlacas = data;
+                const select = document.getElementById('placaId');
+                select.innerHTML = '<option value="">Seleccione una placa...</option>' +
+                    data.map(p => `<option value="${p.id}">${p.nombre} (ID: ${p.id})</option>`).join('');
+            } catch (error) {
+                console.error('Error al cargar placas:', error);
+            }
+        }
+
+        async function loadSolicitudes() {
+            try {
+                const data = await apiGet('/api/solicitudes-armado');
+                allSolicitudes = data;
+                renderSolicitudes(data);
+            } catch (error) {
+                showNotification('Error al cargar solicitudes', 'error');
+            }
+        }
+
+        function renderSolicitudes(solicitudes) {
+            const tbody = document.getElementById('solicitudes-tbody');
+            
+            if (solicitudes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay solicitudes de armado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = solicitudes.map(sol => `
+                <tr>
+                    <td>${sol.id}</td>
+                    <td>${sol.placaNombre}</td>
+                    <td>${sol.clienteNombre}</td>
+                    <td>${sol.cantidad}</td>
+                    <td>
+                        <span class="badge badge-${getEstadoBadge(sol.estado)}">
+                            ${sol.estado.replace('_', ' ')}
+                        </span>
+                    </td>
+                    <td>${sol.operadorNombre || '-'}</td>
+                    <td>${new Date(sol.createdAt).toLocaleDateString()}</td>
+                    <td>
+                        <button onclick="verDetalle(${sol.id})" class="btn btn-sm btn-info">
+                            👁️ Ver
+                        </button>
+                        ${getAccionButtons(sol)}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getEstadoBadge(estado) {
+            const badges = {
+                'PENDIENTE': 'warning',
+                'EN_PROCESO': 'info',
+                'COMPLETADO': 'success',
+                'CANCELADO': 'danger'
+            };
+            return badges[estado] || 'secondary';
+        }
+
+        function getAccionButtons(solicitud) {
+            let buttons = '';
+            
+            // Solo admin/operador pueden cambiar estado y confirmar
+            if (userRole === 'ADMIN' || userRole === 'OPERADOR') {
+                if (solicitud.estado === 'PENDIENTE') {
+                    buttons += `<button onclick="cambiarEstado(${solicitud.id}, 'EN_PROCESO')" class="btn btn-sm btn-primary">Iniciar</button>`;
+                }
+                if (solicitud.estado === 'EN_PROCESO') {
+                    buttons += `<button onclick="confirmarArmado(${solicitud.id})" class="btn btn-sm btn-success">Confirmar</button>`;
+                }
+            }
+            
+            // Admin puede eliminar
+            if (userRole === 'ADMIN') {
+                buttons += `<button onclick="deleteSolicitud(${solicitud.id})" class="btn btn-sm btn-danger">🗑️</button>`;
+            }
+            
+            return buttons;
+        }
+
+        function filterSolicitudes() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const estado = document.getElementById('estado-filter').value;
+
+            const filtered = allSolicitudes.filter(sol => {
+                const matchesSearch = sol.placaNombre.toLowerCase().includes(searchTerm);
+                const matchesEstado = !estado || sol.estado === estado;
+                return matchesSearch && matchesEstado;
+            });
+
+            renderSolicitudes(filtered);
+        }
+
+        function openCreateModal() {
+            document.getElementById('solicitud-form').reset();
+            document.getElementById('solicitud-modal').style.display = 'block';
+        }
+
+        async function verDetalle(id) {
+            try {
+                const sol = await apiGet(`/api/solicitudes-armado/${id}`);
+                const content = `
+                    <div class="detail-grid">
+                        <div><strong>ID:</strong> ${sol.id}</div>
+                        <div><strong>Placa:</strong> ${sol.placaNombre}</div>
+                        <div><strong>Cliente:</strong> ${sol.clienteNombre}</div>
+                        <div><strong>Operador:</strong> ${sol.operadorNombre || 'Sin asignar'}</div>
+                        <div><strong>Estado:</strong> <span class="badge badge-${getEstadoBadge(sol.estado)}">${sol.estado}</span></div>
+                        <div><strong>Cantidad:</strong> ${sol.cantidad}</div>
+                        <div><strong>Observaciones:</strong> ${sol.observaciones || '-'}</div>
+                        <div><strong>Fecha Creación:</strong> ${new Date(sol.createdAt).toLocaleString()}</div>
+                        <div><strong>Última Actualización:</strong> ${new Date(sol.updatedAt).toLocaleString()}</div>
+                    </div>
+                    ${sol.tareas && sol.tareas.length > 0 ? `
+                        <h4 class="mt-3">Tareas Asociadas</h4>
+                        <table class="table">
+                            <thead>
+                                <tr><th>Título</th><th>Estado</th><th>Operador</th></tr>
+                            </thead>
+                            <tbody>
+                                ${sol.tareas.map(t => `
+                                    <tr>
+                                        <td>${t.titulo}</td>
+                                        <td><span class="badge badge-${getEstadoBadge(t.estado)}">${t.estado}</span></td>
+                                        <td>${t.operadorNombre}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    ` : ''}
+                `;
+                document.getElementById('detalle-content').innerHTML = content;
+                document.getElementById('detalle-modal').style.display = 'block';
+            } catch (error) {
+                showNotification('Error al cargar detalle', 'error');
+            }
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const data = {
+                placaId: parseInt(document.getElementById('placaId').value),
+                cantidad: parseInt(document.getElementById('cantidad').value),
+                observaciones: document.getElementById('observaciones').value
+            };
+
+            try {
+                await apiPost('/api/solicitudes-armado', data);
+                showNotification('Solicitud creada exitosamente', 'success');
+                closeModal();
+                loadSolicitudes();
+            } catch (error) {
+                const message = error.message || 'Error al crear solicitud';
+                showNotification(message, 'error');
+            }
+        }
+
+        async function cambiarEstado(id, nuevoEstado) {
+            try {
+                await apiPut(`/api/solicitudes-armado/${id}/estado`, { estado: nuevoEstado });
+                showNotification('Estado actualizado exitosamente', 'success');
+                loadSolicitudes();
+            } catch (error) {
+                showNotification('Error al cambiar estado', 'error');
+            }
+        }
+
+        async function confirmarArmado(id) {
+            if (!confirm('¿Confirmar armado? Esto descontará el stock de componentes.')) return;
+            
+            try {
+                await apiPut(`/api/solicitudes-armado/${id}/confirmar`, {});
+                showNotification('Armado confirmado exitosamente. Stock descontado.', 'success');
+                loadSolicitudes();
+            } catch (error) {
+                showNotification('Error al confirmar armado', 'error');
+            }
+        }
+
+        async function deleteSolicitud(id) {
+            if (!confirm('¿Estás seguro de eliminar esta solicitud?')) return;
+            
+            try {
+                await apiDelete(`/api/solicitudes-armado/${id}`);
+                showNotification('Solicitud eliminada exitosamente', 'success');
+                loadSolicitudes();
+            } catch (error) {
+                showNotification('Error al eliminar solicitud', 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('solicitud-modal').style.display = 'none';
+        }
+
+        function closeDetalleModal() {
+            document.getElementById('detalle-modal').style.display = 'none';
+        }
+
+        // Cargar al iniciar
+        loadPlacas();
+        loadSolicitudes();
+    </script>
+</body>
+</html>
