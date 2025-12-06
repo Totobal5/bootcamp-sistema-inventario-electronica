@@ -3,10 +3,14 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "java -jar app.jar"
+# Don't override ENTRYPOINT - let Dockerfile handle it
+# Railway will automatically use the ENTRYPOINT from Dockerfile
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
 # Health check configuration
+# Spring Boot puede tardar 60-90 segundos en arrancar por primera vez
 healthcheckPath = "/actuator/health"
-healthcheckTimeout = 300
+healthcheckTimeout = 600
+# Esperar 60 segundos antes del primer healthcheck
+healthcheckInitialDelay = 60

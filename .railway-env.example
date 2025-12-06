@@ -1,0 +1,36 @@
+# Railway Environment Variables Configuration
+# Copy these variable names to Railway dashboard and set appropriate values
+
+# Database Configuration (Railway PostgreSQL plugin auto-generates these)
+SPRING_DATASOURCE_URL=jdbc:postgresql://host:port/database
+SPRING_DATASOURCE_USERNAME=username
+SPRING_DATASOURCE_PASSWORD=password
+
+# JPA/Hibernate Configuration
+SPRING_JPA_HIBERNATE_DDL_AUTO=update
+SPRING_JPA_SHOW_SQL=false
+SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+
+# Spring Profile (CRITICAL - must be 'prod' for production)
+SPRING_PROFILES_ACTIVE=prod
+
+# JWT Configuration (CRITICAL - generate secure random keys)
+JWT_SECRET=your-super-secret-key-must-be-at-least-256-bits-long-change-in-production
+JWT_EXPIRATION=86400000
+
+# Server Configuration (Railway auto-sets PORT)
+SERVER_PORT=${PORT}
+
+# File Upload Configuration
+FILE_UPLOAD_DIR=/app/uploads
+SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=10MB
+SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=10MB
+
+# Logging Configuration
+LOGGING_LEVEL_COM_BOOTCAMP_INVENTORY=INFO
+
+# Database URL format for Railway PostgreSQL:
+# If Railway provides: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
+# Then set: SPRING_DATASOURCE_URL=jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
+#           SPRING_DATASOURCE_USERNAME=${PGUSER}
+#           SPRING_DATASOURCE_PASSWORD=${PGPASSWORD}

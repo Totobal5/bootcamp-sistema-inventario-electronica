@@ -32,15 +32,14 @@ RUN mkdir -p /app/uploads && chown -R spring:spring /app
 # Switch to non-root user
 USER spring:spring
 
-# Expose port (Railway uses 8080 by default)
-EXPOSE 8080
+# Expose port (Railway uses dynamic PORT variable)
+EXPOSE ${PORT:-8080}
 
 # Optimized JVM settings for Railway (512MB limit on free tier)
 ENV JAVA_TOOL_OPTIONS="-Xmx512m -Xms256m -XX:MaxMetaspaceSize=128m -XX:+UseContainerSupport"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+# Disable healthcheck in Dockerfile (Railway manages this externally)
+# Railway will check /actuator/health via the configured healthcheck path
 
-# Start application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Start application with prod profile
+ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]

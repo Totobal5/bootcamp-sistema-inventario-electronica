@@ -63,7 +63,7 @@ SPRING_JPA_SHOW_SQL=false
 SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
 
 # JWT (IMPORTANTE: Generar clave segura única)
-JWT_SECRET=<GENERAR_CON_openssl_rand_base64_32>
+JWT_SECRET=vHrgYV5WAajlK2Bl7SxZTDXopHbrgA
 JWT_EXPIRATION=86400000
 
 # Server
