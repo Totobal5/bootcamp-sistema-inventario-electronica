@@ -29,9 +29,9 @@ public interface ComponenteElectronicoRepository extends JpaRepository<Component
     List<ComponenteElectronico> findByNombreContainingIgnoreCase(String nombre);
 
     /**
-     * Busca componentes con stock mayor o igual al especificado
+     * Busca componentes con stock actual mayor o igual al especificado
      */
-    List<ComponenteElectronico> findByStockGreaterThanEqual(Integer stock);
+    List<ComponenteElectronico> findByStockActualGreaterThanEqual(Integer stockActual);
 
     /**
      * Verifica si existe un componente con el nombre dado

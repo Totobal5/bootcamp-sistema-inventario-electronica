@@ -167,7 +167,7 @@ public class PlacaServiceImpl implements IPlacaService {
 
         for (PlacaComponente pc : placa.getComponentes()) {
             int stockNecesario = pc.getCantidadNecesaria() * cantidad;
-            int stockDisponible = pc.getComponente().getStock();
+            int stockDisponible = pc.getComponente().getStockActual();
 
             if (stockDisponible < stockNecesario) {
                 log.warn("Stock insuficiente para componente {}: necesario={}, disponible={}",
@@ -200,7 +200,7 @@ public class PlacaServiceImpl implements IPlacaService {
                         .componenteNombre(pc.getComponente().getNombre())
                         .componenteCategoria(pc.getComponente().getCategoria())
                         .cantidadNecesaria(pc.getCantidadNecesaria())
-                        .stockDisponible(pc.getComponente().getStock())
+                        .stockDisponible(pc.getComponente().getStockActual())
                         .build())
                 .collect(Collectors.toList());
 
