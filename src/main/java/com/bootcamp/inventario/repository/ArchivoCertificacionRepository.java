@@ -33,7 +33,7 @@ public interface ArchivoCertificacionRepository extends JpaRepository<ArchivoCer
      */
     @Query("SELECT a FROM ArchivoCertificacion a " +
            "LEFT JOIN FETCH a.solicitudArmado sa " +
-           "LEFT JOIN FETCH sa.placa " +
+           "LEFT JOIN FETCH sa.pcbDesign " +
            "WHERE a.id = :id")
     Optional<ArchivoCertificacion> findByIdWithSolicitud(@Param("id") Long id);
     

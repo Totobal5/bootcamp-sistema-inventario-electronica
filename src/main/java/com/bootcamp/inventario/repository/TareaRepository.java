@@ -39,7 +39,7 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
     @Query("SELECT t FROM Tarea t " +
            "LEFT JOIN FETCH t.operador " +
            "LEFT JOIN FETCH t.solicitudArmado sa " +
-           "LEFT JOIN FETCH sa.placa " +
+           "LEFT JOIN FETCH sa.pcbDesign " +
            "WHERE t.id = :id")
     Optional<Tarea> findByIdWithRelations(@Param("id") Long id);
     
@@ -48,7 +48,7 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
      */
     @Query("SELECT t FROM Tarea t " +
            "LEFT JOIN FETCH t.solicitudArmado sa " +
-           "LEFT JOIN FETCH sa.placa " +
+           "LEFT JOIN FETCH sa.pcbDesign " +
            "WHERE t.operador.id = :operadorId")
     List<Tarea> findByOperadorIdWithSolicitud(@Param("operadorId") Long operadorId);
     
