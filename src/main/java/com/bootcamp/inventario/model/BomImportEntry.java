@@ -114,7 +114,7 @@ public class BomImportEntry {
      * 0.5-0.99 = Match parcial por similitud
      * null = No match
      */
-    @Column(precision = 3, scale = 2)
+    @Column
     private Double matchConfidence;
 
     /**
