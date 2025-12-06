@@ -1,32 +1,55 @@
-# Directorios de compilación
+# Build artifacts
 target/
 !target/*.jar
 *.class
 
-# Archivos de configuración local
+# Configuration files (use environment variables instead)
 .env
 .env.local
+.env.example
 *.log
+application-dev.properties
 
-# Directorios de IDE
+# IDE files
 .idea/
 .vscode/
 *.iml
 *.ipr
 *.iws
+.DS_Store
 
-# Git
+# Git files
 .git/
 .gitignore
 .gitattributes
+.github/
 
-# Maven
+# Maven wrapper (use Docker's Maven)
 .mvn/
 mvnw
 mvnw.cmd
 
-# Node modules (si hubiera frontend)
+# Documentation
+*.md
+docs/
+RAILWAY-DEPLOYMENT.md
+RENDER-DEPLOYMENT.md
+QUICK-START-DEPLOY.md
+
+# Docker files (avoid recursion)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Test files
+src/test/
+
+# Local uploads directory
+uploads/
+
+# Node modules (if any)
 node_modules/
+package-lock.json
 
 # Archivos del sistema
 .DS_Store
