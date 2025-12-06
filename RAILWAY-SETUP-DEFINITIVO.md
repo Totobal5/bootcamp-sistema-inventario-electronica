@@ -16,25 +16,28 @@
 
 **Ve a tu servicio de aplicación (NO PostgreSQL)** → **Variables** → Agrega:
 
-### Opción A: Usar DATABASE_URL (MÁS SIMPLE) ⭐ RECOMENDADO
+### 🎯 Configuración SIMPLIFICADA (Solo 3 variables)
+
+Railway inyecta automáticamente `DATABASE_URL`, pero Spring Boot necesita el prefijo `jdbc:`.
+
+**Configura EXACTAMENTE estas 3 variables:**
 
 ```bash
-# NO NECESITAS configurar nada manualmente
-# La app usará automáticamente DATABASE_URL que Railway inyecta
+SPRING_DATASOURCE_URL=jdbc:${{Postgres.DATABASE_URL}}
+JWT_SECRET=<genera-uno-con-comando-abajo>
+JWT_EXPIRATION=86400000
 ```
 
-La aplicación está configurada para leer `DATABASE_URL` automáticamente de las variables de entorno que Railway inyecta desde el servicio PostgreSQL.
-
-### Opción B: Usar Referencias de Railway (Si prefieres control manual)
-
-```bash
-SPRING_DATASOURCE_URL=${{Postgres.DATABASE_URL}}
+**⚠️ CRÍTICO - Sintaxis de Railway Reference:**
+```
+✅ CORRECTO: jdbc:${{Postgres.DATABASE_URL}}
+❌ INCORRECTO: jdbc:${DATABASE_URL}
+❌ INCORRECTO: ${{Postgres.DATABASE_URL}} (falta el prefijo jdbc:)
 ```
 
-**⚠️ SINTAXIS CORRECTA DE REFERENCIAS:**
-- ✅ `${{Postgres.DATABASE_URL}}` - Railway expande esto
-- ❌ `${DATABASE_URL}` - NO funciona, Railway no expande esto
-- ❌ `${PGHOST}:${PGPORT}` - NO funciona
+La parte `jdbc:` se concatena con la variable de Railway `${{Postgres.DATABASE_URL}}` que tiene formato `postgresql://user:password@host:port/db`.
+
+Resultado final: `jdbc:postgresql://user:password@host:port/db`
 
 ### Variables OBLIGATORIAS que SÍ debes configurar manualmente:
 
