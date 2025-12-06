@@ -261,9 +261,10 @@
                 nombre: document.getElementById('nombre').value,
                 categoria: document.getElementById('categoria').value,
                 descripcion: document.getElementById('descripcion').value,
-                stock: parseInt(document.getElementById('stockActual').value),
-                precio: parseFloat(document.getElementById('precioUnitario').value),
-                imagenUrl: null // Opcional
+                stockActual: parseInt(document.getElementById('stockActual').value),
+                stockMinimo: parseInt(document.getElementById('stockMinimo').value),
+                precioUnitario: parseFloat(document.getElementById('precioUnitario').value),
+                ubicacion: document.getElementById('ubicacion').value
             };
 
             try {
