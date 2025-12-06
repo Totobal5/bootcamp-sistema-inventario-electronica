@@ -38,8 +38,11 @@ EXPOSE ${PORT:-8080}
 # Optimized JVM settings for Railway (512MB limit on free tier)
 ENV JAVA_TOOL_OPTIONS="-Xmx512m -Xms256m -XX:MaxMetaspaceSize=128m -XX:+UseContainerSupport"
 
+# Force production profile via environment variable (highest priority)
+ENV SPRING_PROFILES_ACTIVE=prod
+
 # Disable healthcheck in Dockerfile (Railway manages this externally)
 # Railway will check /actuator/health via the configured healthcheck path
 
-# Start application with prod profile
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+# Start application - profile is set via ENV variable above
+ENTRYPOINT ["java", "-jar", "app.jar"]
