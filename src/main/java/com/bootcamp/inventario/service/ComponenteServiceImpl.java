@@ -70,14 +70,23 @@ public class ComponenteServiceImpl implements IComponenteService {
             throw new DuplicateResourceException("Componente", "nombre", request.getNombre());
         }
 
+        // Validar que el código interno no exista (si se proporciona)
+        if (request.getCodigoInterno() != null && !request.getCodigoInterno().isBlank()) {
+            if (componenteRepository.existsByCodigoInterno(request.getCodigoInterno())) {
+                throw new DuplicateResourceException("Componente", "codigoInterno", request.getCodigoInterno());
+            }
+        }
+
         ComponenteElectronico componente = ComponenteElectronico.builder()
                 .nombre(request.getNombre())
+                .codigoInterno(request.getCodigoInterno())
                 .descripcion(request.getDescripcion())
                 .stockActual(request.getStockActual())
                 .stockMinimo(request.getStockMinimo() != null ? request.getStockMinimo() : 0)
                 .categoria(request.getCategoria())
                 .precioUnitario(request.getPrecioUnitario())
                 .ubicacion(request.getUbicacion())
+                .urlCompra(request.getUrlCompra())
                 .imagenUrl(request.getImagenUrl())
                 .build();
 
@@ -102,13 +111,25 @@ public class ComponenteServiceImpl implements IComponenteService {
                     }
                 });
 
+        // Validar que el código interno no exista en otro componente (si se proporciona)
+        if (request.getCodigoInterno() != null && !request.getCodigoInterno().isBlank()) {
+            componenteRepository.findByCodigoInterno(request.getCodigoInterno())
+                    .ifPresent(existing -> {
+                        if (!existing.getId().equals(id)) {
+                            throw new DuplicateResourceException("Componente", "codigoInterno", request.getCodigoInterno());
+                        }
+                    });
+        }
+
         componente.setNombre(request.getNombre());
+        componente.setCodigoInterno(request.getCodigoInterno());
         componente.setDescripcion(request.getDescripcion());
         componente.setStockActual(request.getStockActual());
         componente.setStockMinimo(request.getStockMinimo() != null ? request.getStockMinimo() : 0);
         componente.setCategoria(request.getCategoria());
         componente.setPrecioUnitario(request.getPrecioUnitario());
         componente.setUbicacion(request.getUbicacion());
+        componente.setUrlCompra(request.getUrlCompra());
         componente.setImagenUrl(request.getImagenUrl());
 
         ComponenteElectronico updated = componenteRepository.save(componente);
@@ -152,13 +173,23 @@ public class ComponenteServiceImpl implements IComponenteService {
     private ComponenteResponse mapToResponse(ComponenteElectronico componente) {
         return ComponenteResponse.builder()
                 .id(componente.getId())
+                // Campos técnicos de manufactura
+                .mpn(componente.getMpn())
+                .manufacturer(componente.getManufacturer())
+                .footprint(componente.getFootprint())
+                .datasheetUrl(componente.getDatasheetUrl())
+                .valorTecnico(componente.getValorTecnico())
+                .specs(componente.getSpecs())
+                // Campos generales
                 .nombre(componente.getNombre())
+                .codigoInterno(componente.getCodigoInterno())
                 .descripcion(componente.getDescripcion())
                 .stockActual(componente.getStockActual())
                 .stockMinimo(componente.getStockMinimo())
                 .categoria(componente.getCategoria())
                 .precioUnitario(componente.getPrecioUnitario())
                 .ubicacion(componente.getUbicacion())
+                .urlCompra(componente.getUrlCompra())
                 .imagenUrl(componente.getImagenUrl())
                 .createdAt(componente.getCreatedAt())
                 .updatedAt(componente.getUpdatedAt())

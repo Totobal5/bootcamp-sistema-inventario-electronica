@@ -24,7 +24,7 @@ import java.util.List;
 @RequestMapping("/api/solicitudes-armado")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Solicitudes de Armado", description = "Gestión de solicitudes de armado de placas electrónicas")
+@Tag(name = "Solicitudes de Armado", description = "Gestión de solicitudes de armado de diseños PCB")
 public class SolicitudArmadoController {
 
     private final ISolicitudArmadoService solicitudService;
@@ -80,12 +80,12 @@ public class SolicitudArmadoController {
         return ResponseEntity.ok(solicitudService.findByEstado(estado));
     }
 
-    @GetMapping("/placa/{placaId}")
-    @Operation(summary = "Obtener solicitudes de una placa específica")
-    public ResponseEntity<List<SolicitudArmadoResponse>> getSolicitudesByPlaca(
-            @PathVariable @Parameter(description = "ID de la placa") Long placaId) {
-        log.debug("GET /api/solicitudes-armado/placa/{}", placaId);
-        return ResponseEntity.ok(solicitudService.findByPlacaId(placaId));
+    @GetMapping("/pcb-design/{pcbDesignId}")
+    @Operation(summary = "Obtener solicitudes de un diseño PCB específico")
+    public ResponseEntity<List<SolicitudArmadoResponse>> getSolicitudesByPcbDesign(
+            @PathVariable @Parameter(description = "ID del diseño PCB") Long pcbDesignId) {
+        log.debug("GET /api/solicitudes-armado/pcb-design/{}", pcbDesignId);
+        return ResponseEntity.ok(solicitudService.findByPcbDesignId(pcbDesignId));
     }
 
     @PostMapping

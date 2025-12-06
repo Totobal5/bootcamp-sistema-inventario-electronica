@@ -77,17 +77,19 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>MPN</th>
                             <th>Nombre</th>
+                            <th>Fabricante</th>
+                            <th>Footprint</th>
                             <th>Categoría</th>
                             <th>Stock</th>
                             <th>Precio Unit.</th>
-                            <th>Ubicación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="componentes-tbody">
                         <tr>
-                            <td colspan="7" class="text-center">Cargando componentes...</td>
+                            <td colspan="9" class="text-center">Cargando componentes...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -97,58 +99,148 @@
 
     <!-- Modal Crear/Editar -->
     <div id="component-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content modal-wide">
             <div class="modal-header">
                 <h2 id="modal-title">Nuevo Componente</h2>
                 <span class="close" onclick="closeModal()">&times;</span>
             </div>
             <form id="component-form" onsubmit="handleSubmit(event)">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label for="nombre">Nombre *</label>
-                        <input type="text" id="nombre" required class="form-control"
-                               placeholder="Resistencia 10kΩ">
+                    <!-- Sistema de Pestañas -->
+                    <div class="tabs">
+                        <button type="button" class="tab-button active" onclick="switchTab('general')">
+                            📋 Datos Generales
+                        </button>
+                        <button type="button" class="tab-button" onclick="switchTab('technical')">
+                            ⚙️ Datos Técnicos
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label for="categoria">Categoría *</label>
-                        <select id="categoria" required class="form-control">
-                            <option value="RESISTENCIA">Resistencia</option>
-                            <option value="CONDENSADOR">Condensador</option>
-                            <option value="TRANSISTOR">Transistor</option>
-                            <option value="DIODO">Diodo</option>
-                            <option value="LED">LED</option>
-                            <option value="CIRCUITO_INTEGRADO">Circuito Integrado</option>
-                            <option value="CONECTORES">Conectores</option>
-                            <option value="OTROS">Otros</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="descripcion">Descripción</label>
-                        <textarea id="descripcion" rows="3" class="form-control"
-                                  placeholder="Descripción del componente"></textarea>
-                    </div>
-                    <div class="form-row">
+
+                    <!-- Pestaña: Datos Generales -->
+                    <div id="tab-general" class="tab-content active">
                         <div class="form-group">
-                            <label for="stockActual">Stock Actual *</label>
-                            <input type="number" id="stockActual" required min="0" 
-                                   class="form-control" value="0">
+                            <label for="mpn">MPN (Manufacturer Part Number) *</label>
+                            <input type="text" id="mpn" required class="form-control"
+                                   placeholder="RC0603JR-0710KL">
+                            <small class="form-text">Identificador único del fabricante (crítico para producción)</small>
                         </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="manufacturer">Fabricante *</label>
+                                <input type="text" id="manufacturer" required class="form-control"
+                                       placeholder="Yageo, Texas Instruments, etc.">
+                            </div>
+                            <div class="form-group">
+                                <label for="footprint">Encapsulado/Footprint *</label>
+                                <input type="text" id="footprint" required class="form-control"
+                                       placeholder="0603, SOIC-8, TO-220">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="categoria">Categoría *</label>
+                                <select id="categoria" required class="form-control" onchange="updateNombreSugerido()">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="RESISTENCIA">Resistencia</option>
+                                    <option value="CONDENSADOR">Condensador</option>
+                                    <option value="TRANSISTOR">Transistor</option>
+                                    <option value="DIODO">Diodo</option>
+                                    <option value="LED">LED</option>
+                                    <option value="CIRCUITO_INTEGRADO">Circuito Integrado</option>
+                                    <option value="CONECTORES">Conectores</option>
+                                    <option value="OTROS">Otros</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="valorTecnico">Valor Técnico</label>
+                                <input type="text" id="valorTecnico" class="form-control"
+                                       placeholder="10kΩ, 100nF, 3.3V" oninput="updateNombreSugerido()">
+                            </div>
+                        </div>
+
                         <div class="form-group">
-                            <label for="stockMinimo">Stock Mínimo *</label>
-                            <input type="number" id="stockMinimo" required min="0" 
-                                   class="form-control" value="10">
+                            <label for="nombre">Nombre del Componente *</label>
+                            <input type="text" id="nombre" required class="form-control"
+                                   placeholder="Se autogenera o edita manualmente">
+                            <small class="form-text" id="nombre-sugerido"></small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="codigoInterno">Código Interno / SKU</label>
+                                <input type="text" id="codigoInterno" class="form-control"
+                                       placeholder="RES-10K-001">
+                            </div>
+                            <div class="form-group">
+                                <label for="ubicacion">Ubicación Física</label>
+                                <input type="text" id="ubicacion" class="form-control"
+                                       placeholder="Estante A-12, Gaveta 3">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="stockActual">Stock Actual *</label>
+                                <input type="number" id="stockActual" required min="0" 
+                                       class="form-control" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="stockMinimo">Stock Mínimo *</label>
+                                <input type="number" id="stockMinimo" required min="0" 
+                                       class="form-control" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="precioUnitario">Precio Unitario *</label>
+                                <input type="number" id="precioUnitario" required min="0" step="0.01"
+                                       class="form-control" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descripcion">Descripción</label>
+                            <textarea id="descripcion" rows="2" class="form-control"
+                                      placeholder="Descripción general del componente"></textarea>
                         </div>
                     </div>
-                    <div class="form-row">
+
+                    <!-- Pestaña: Datos Técnicos -->
+                    <div id="tab-technical" class="tab-content">
                         <div class="form-group">
-                            <label for="precioUnitario">Precio Unitario *</label>
-                            <input type="number" id="precioUnitario" required min="0" step="0.01"
-                                   class="form-control" placeholder="0.00">
+                            <label for="datasheetUrl">📄 URL del Datasheet</label>
+                            <input type="url" id="datasheetUrl" class="form-control"
+                                   placeholder="https://www.example.com/datasheet.pdf">
+                            <small class="form-text">Link al PDF del datasheet técnico del componente</small>
                         </div>
+
                         <div class="form-group">
-                            <label for="ubicacion">Ubicación</label>
-                            <input type="text" id="ubicacion" class="form-control"
-                                   placeholder="Estante A-12">
+                            <label for="urlCompra">🛒 Link Proveedor (Compra)</label>
+                            <input type="url" id="urlCompra" class="form-control"
+                                   placeholder="https://www.mouser.com/ProductDetail/...">
+                            <small class="form-text">URL directa de compra (Mouser, DigiKey, etc.)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="imagenUrl">🖼️ URL de Imagen</label>
+                            <input type="url" id="imagenUrl" class="form-control"
+                                   placeholder="https://www.example.com/image.jpg">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="specs">⚡ Especificaciones Técnicas (JSON)</label>
+                            <textarea id="specs" rows="6" class="form-control font-mono"
+                                      placeholder='{"resistance": "10k", "tolerance": "5%", "power": "0.25W", "temperature_coefficient": "100ppm/°C"}'></textarea>
+                            <small class="form-text">Formato JSON con atributos técnicos específicos. 
+                                <a href="#" onclick="showSpecsHelp(event)">Ver ejemplos</a>
+                            </small>
+                        </div>
+
+                        <div id="specs-help" style="display:none;" class="alert alert-info">
+                            <strong>Ejemplos de especificaciones por categoría:</strong><br>
+                            <code>Resistencia: {"resistance": "10k", "tolerance": "5%", "power": "0.25W"}</code><br>
+                            <code>Condensador: {"capacitance": "100nF", "voltage": "50V", "dielectric": "X7R"}</code><br>
+                            <code>LED: {"color": "red", "forward_voltage": "2.0V", "current": "20mA"}</code>
                         </div>
                     </div>
                 </div>
@@ -157,7 +249,7 @@
                         Cancelar
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        Guardar
+                        💾 Guardar Componente
                     </button>
                 </div>
             </form>
@@ -186,23 +278,30 @@
         function renderComponents(components) {
             const tbody = document.getElementById('componentes-tbody');
             if (components.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay componentes registrados</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay componentes registrados</td></tr>';
                 return;
             }
 
             tbody.innerHTML = components.map(comp => `
                 <tr>
                     <td>${comp.id}</td>
-                    <td><strong>${comp.nombre}</strong></td>
+                    <td><code>${comp.mpn || '-'}</code></td>
+                    <td>
+                        <strong>${comp.nombre}</strong>
+                        ${comp.datasheetUrl ? `<br><a href="${comp.datasheetUrl}" target="_blank" class="small" title="Ver datasheet">📄 Datasheet</a>` : ''}
+                        ${comp.urlCompra ? ` <a href="${comp.urlCompra}" target="_blank" class="small" title="Comprar">🛒 Comprar</a>` : ''}
+                    </td>
+                    <td>${comp.manufacturer || '-'}</td>
+                    <td><span class="badge badge-secondary">${comp.footprint || '-'}</span></td>
                     <td><span class="badge badge-info">${comp.categoria}</span></td>
                     <td>
                         <span class="badge ${comp.stockActual < comp.stockMinimo ? 'badge-danger' : 'badge-success'}">
                             ${comp.stockActual}
                         </span>
-                        ${comp.stockActual < comp.stockMinimo ? '⚠️' : ''}
+                        ${comp.stockActual < comp.stockMinimo ? ' ⚠️' : ''}
+                        <small class="text-muted"> / ${comp.stockMinimo}</small>
                     </td>
                     <td>$${comp.precioUnitario.toFixed(2)}</td>
-                    <td>${comp.ubicacion || '-'}</td>
                     <td>
                         <button onclick="editComponent(${comp.id})" class="btn btn-sm btn-warning">
                             ✏️ Editar
@@ -241,15 +340,41 @@
                 const comp = await apiGet(`/api/componentes/${id}`);
                 editingId = id;
                 document.getElementById('modal-title').textContent = 'Editar Componente';
-                document.getElementById('nombre').value = comp.nombre;
+                
+                // Datos Generales
+                document.getElementById('mpn').value = comp.mpn || '';
+                document.getElementById('manufacturer').value = comp.manufacturer || '';
+                document.getElementById('footprint').value = comp.footprint || '';
                 document.getElementById('categoria').value = comp.categoria;
-                document.getElementById('descripcion').value = comp.descripcion || '';
+                document.getElementById('valorTecnico').value = comp.valorTecnico || '';
+                document.getElementById('nombre').value = comp.nombre;
+                document.getElementById('codigoInterno').value = comp.codigoInterno || '';
+                document.getElementById('ubicacion').value = comp.ubicacion || '';
                 document.getElementById('stockActual').value = comp.stockActual;
                 document.getElementById('stockMinimo').value = comp.stockMinimo;
                 document.getElementById('precioUnitario').value = comp.precioUnitario;
-                document.getElementById('ubicacion').value = comp.ubicacion || '';
+                document.getElementById('descripcion').value = comp.descripcion || '';
+                
+                // Datos Técnicos
+                document.getElementById('datasheetUrl').value = comp.datasheetUrl || '';
+                document.getElementById('urlCompra').value = comp.urlCompra || '';
+                document.getElementById('imagenUrl').value = comp.imagenUrl || '';
+                
+                // Specs JSON
+                if (comp.specs) {
+                    document.getElementById('specs').value = typeof comp.specs === 'string' 
+                        ? comp.specs 
+                        : JSON.stringify(comp.specs, null, 2);
+                } else {
+                    document.getElementById('specs').value = '';
+                }
+                
                 document.getElementById('component-modal').style.display = 'block';
             } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al cargar componente', 'error');
+            }
+        }
                 showNotification('Error al cargar componente', 'error');
             }
         }
@@ -257,14 +382,44 @@
         async function handleSubmit(event) {
             event.preventDefault();
             
+            // Validar JSON de specs si está presente
+            let specsData = null;
+            const specsInput = document.getElementById('specs').value.trim();
+            if (specsInput) {
+                try {
+                    specsData = JSON.parse(specsInput);
+                } catch (e) {
+                    showNotification('Error: El campo Especificaciones Técnicas debe ser JSON válido', 'error');
+                    return;
+                }
+            }
+            
             const data = {
-                nombre: document.getElementById('nombre').value,
+                // Campos técnicos críticos
+                mpn: document.getElementById('mpn').value,
+                manufacturer: document.getElementById('manufacturer').value,
+                footprint: document.getElementById('footprint').value,
+                
+                // Campos generales
                 categoria: document.getElementById('categoria').value,
-                descripcion: document.getElementById('descripcion').value,
+                valorTecnico: document.getElementById('valorTecnico').value || null,
+                nombre: document.getElementById('nombre').value,
+                codigoInterno: document.getElementById('codigoInterno').value || null,
+                ubicacion: document.getElementById('ubicacion').value || null,
+                descripcion: document.getElementById('descripcion').value || null,
+                
+                // Stock y precios
                 stockActual: parseInt(document.getElementById('stockActual').value),
                 stockMinimo: parseInt(document.getElementById('stockMinimo').value),
                 precioUnitario: parseFloat(document.getElementById('precioUnitario').value),
-                ubicacion: document.getElementById('ubicacion').value
+                
+                // URLs técnicas
+                datasheetUrl: document.getElementById('datasheetUrl').value || null,
+                urlCompra: document.getElementById('urlCompra').value || null,
+                imagenUrl: document.getElementById('imagenUrl').value || null,
+                
+                // Especificaciones dinámicas
+                specs: specsData
             };
 
             try {
@@ -278,7 +433,8 @@
                 closeModal();
                 loadComponents();
             } catch (error) {
-                showNotification('Error al guardar componente', 'error');
+                console.error('Error al guardar:', error);
+                showNotification(error.message || 'Error al guardar componente', 'error');
             }
         }
 
@@ -296,6 +452,64 @@
 
         function closeModal() {
             document.getElementById('component-modal').style.display = 'none';
+            document.getElementById('component-form').reset();
+            // Volver a la pestaña de datos generales
+            switchTab('general');
+        }
+
+        // === SISTEMA DE PESTAÑAS ===
+        function switchTab(tabName) {
+            // Ocultar todos los contenidos
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Desactivar todos los botones
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Activar la pestaña seleccionada
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // === AUTOGENERACIÓN DE NOMBRE ===
+        function updateNombreSugerido() {
+            const categoria = document.getElementById('categoria').value;
+            const valorTecnico = document.getElementById('valorTecnico').value;
+            const footprint = document.getElementById('footprint').value;
+            
+            if (!categoria) {
+                document.getElementById('nombre-sugerido').textContent = '';
+                return;
+            }
+            
+            let nombreSugerido = categoria.replace('_', ' ');
+            
+            if (valorTecnico) {
+                nombreSugerido += ` ${valorTecnico}`;
+            }
+            
+            if (footprint) {
+                nombreSugerido += ` (${footprint})`;
+            }
+            
+            document.getElementById('nombre-sugerido').innerHTML = 
+                `💡 Sugerencia: <strong>${nombreSugerido}</strong> 
+                 <a href="#" onclick="useSuggestedName(event, '${nombreSugerido}')">Usar este nombre</a>`;
+        }
+
+        function useSuggestedName(event, name) {
+            event.preventDefault();
+            document.getElementById('nombre').value = name;
+        }
+
+        // === AYUDA DE SPECS ===
+        function showSpecsHelp(event) {
+            event.preventDefault();
+            const helpDiv = document.getElementById('specs-help');
+            helpDiv.style.display = helpDiv.style.display === 'none' ? 'block' : 'none';
         }
 
         // Cargar al iniciar

@@ -12,29 +12,29 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * DTO para crear/actualizar placas
+ * DTO para crear/actualizar diseños de PCB
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Datos para crear o actualizar una placa")
-public class PlacaRequest {
+@Schema(description = "Datos para crear o actualizar un diseño de PCB")
+public class PcbDesignRequest {
 
-    @NotBlank(message = "El nombre de la placa es obligatorio")
+    @NotBlank(message = "El nombre del diseño es obligatorio")
     @Size(max = 100, message = "El nombre no puede exceder 100 caracteres")
-    @Schema(description = "Nombre de la placa", example = "Placa Arduino Uno Compatible")
+    @Schema(description = "Nombre del diseño de PCB", example = "Placa Arduino Uno Compatible")
     private String nombre;
 
-    @Schema(description = "Descripción detallada de la placa",
+    @Schema(description = "Descripción detallada del diseño",
             example = "Placa compatible con Arduino Uno R3, incluye microcontrolador ATmega328P")
     private String descripcion;
 
-    @Schema(description = "URL de la imagen de la placa",
+    @Schema(description = "URL de la imagen del diseño",
             example = "https://example.com/images/arduino-uno.jpg")
     private String imagenUrl;
 
-    @NotEmpty(message = "La placa debe tener al menos un componente")
+    @NotEmpty(message = "El diseño debe tener al menos un componente")
     @Valid
-    @Schema(description = "Lista de componentes necesarios para la placa")
-    private List<PlacaComponenteRequest> componentes;
+    @Schema(description = "Lista de componentes necesarios para el diseño (BOM)")
+    private List<BomEntryRequest> componentes;
 }

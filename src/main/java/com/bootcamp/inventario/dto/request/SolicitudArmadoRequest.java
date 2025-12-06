@@ -16,13 +16,13 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Request para crear solicitud de armado")
 public class SolicitudArmadoRequest {
     
-    @NotNull(message = "El ID de la placa es obligatorio")
-    @Schema(description = "ID de la placa a armar", example = "1")
-    private Long placaId;
+    @NotNull(message = "El ID del diseño PCB es obligatorio")
+    @Schema(description = "ID del diseño de PCB a armar", example = "1")
+    private Long pcbDesignId;
     
     @NotNull(message = "La cantidad es obligatoria")
     @Positive(message = "La cantidad debe ser mayor a 0")
-    @Schema(description = "Cantidad de placas a armar", example = "5")
+    @Schema(description = "Cantidad de PCBs a armar", example = "5")
     private Integer cantidad;
     
     @Size(max = 500, message = "Las observaciones no pueden exceder 500 caracteres")

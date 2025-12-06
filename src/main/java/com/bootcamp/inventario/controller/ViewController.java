@@ -42,11 +42,11 @@ public class ViewController {
     }
 
     /**
-     * Gestión de placas
+     * Gestión de diseños PCB
      */
-    @GetMapping("/placas")
-    public String placas() {
-        return "placas";
+    @GetMapping("/pcb-designs")
+    public String pcbDesigns() {
+        return "pcb-designs";
     }
 
     /**

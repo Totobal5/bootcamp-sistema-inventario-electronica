@@ -446,6 +446,11 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
+/* Modal ancho para formularios complejos */
+.modal-wide {
+    max-width: 900px;
+}
+
 .modal-header {
     padding: 20px 30px;
     border-bottom: 1px solid #f0f0f0;
@@ -477,6 +482,99 @@ body {
 
 .close:hover {
     color: #333;
+}
+
+/* ========================================
+   SISTEMA DE PESTAÑAS
+   ======================================== */
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 25px;
+    gap: 5px;
+}
+
+.tab-button {
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.tab-button.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background: #f8f9ff;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================
+   CAMPOS TÉCNICOS
+   ======================================== */
+.font-mono {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.alert-info {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    padding: 12px 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.alert-info code {
+    background: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    display: block;
+    margin: 5px 0;
+}
+
+#nombre-sugerido {
+    color: #666;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+#nombre-sugerido strong {
+    color: var(--primary-color);
+}
+
+#nombre-sugerido a {
+    color: var(--success-color);
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+#nombre-sugerido a:hover {
+    text-decoration: underline;
 }
 
 /* ========================================
@@ -578,4 +676,25 @@ body {
     .form-row, .filter-row {
         grid-template-columns: 1fr;
     }
+}
+
+/* ========================================
+   BADGES ADICIONALES
+   ======================================== */
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-info {
+    background: #74b9ff;
+    color: #2d3436;
+}
+
+.badge-secondary {
+    background: #636e72;
+    color: white;
 }

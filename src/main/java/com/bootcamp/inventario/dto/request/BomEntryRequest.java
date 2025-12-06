@@ -8,13 +8,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO para relacionar un componente con una placa
+ * DTO para entradas del BOM (Bill of Materials)
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Componente necesario para una placa")
-public class PlacaComponenteRequest {
+@Schema(description = "Componente necesario en el BOM del diseño PCB")
+public class BomEntryRequest {
 
     @NotNull(message = "El ID del componente es obligatorio")
     @Schema(description = "ID del componente electrónico", example = "1")
@@ -24,4 +24,7 @@ public class PlacaComponenteRequest {
     @Min(value = 1, message = "La cantidad debe ser al menos 1")
     @Schema(description = "Cantidad necesaria del componente", example = "2")
     private Integer cantidadNecesaria;
+
+    @Schema(description = "Designadores del componente en la PCB", example = "R1,R2,R3")
+    private String designators;
 }

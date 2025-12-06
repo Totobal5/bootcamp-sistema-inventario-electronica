@@ -55,12 +55,14 @@ class ComponenteControllerTest {
         componenteResponse = ComponenteResponse.builder()
                 .id(1L)
                 .nombre("Resistencia 1K")
+                .codigoInterno("RES-1K-001")
                 .descripcion("Resistencia de 1K Ohm")
                 .stockActual(100)
                 .stockMinimo(10)
                 .categoria("Resistencias")
                 .precioUnitario(new BigDecimal("0.50"))
                 .ubicacion("Estante A-1")
+                .urlCompra("https://www.ejemplo.com/resistencia-1k")
                 .imagenUrl("http://example.com/resistencia.jpg")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -68,12 +70,14 @@ class ComponenteControllerTest {
 
         componenteRequest = new ComponenteRequest();
         componenteRequest.setNombre("Resistencia 1K");
+        componenteRequest.setCodigoInterno("RES-1K-001");
         componenteRequest.setDescripcion("Resistencia de 1K Ohm");
         componenteRequest.setStockActual(100);
         componenteRequest.setStockMinimo(10);
         componenteRequest.setCategoria("Resistencias");
         componenteRequest.setPrecioUnitario(new BigDecimal("0.50"));
         componenteRequest.setUbicacion("Estante A-1");
+        componenteRequest.setUrlCompra("https://www.ejemplo.com/resistencia-1k");
         componenteRequest.setImagenUrl("http://example.com/resistencia.jpg");
     }
 
@@ -314,6 +318,23 @@ class ComponenteControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(componenteRequest)))
                     .andExpect(status().isConflict());
+        }
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("Should return 409 when codigoInterno already exists")
+        void createComponente_ShouldReturn409_WhenCodigoInternoExists() throws Exception {
+            // Given
+            when(componenteService.create(any(ComponenteRequest.class)))
+                    .thenThrow(new DuplicateResourceException("Componente", "codigoInterno", "RES-1K-001"));
+
+            // When/Then
+            mockMvc.perform(post("/api/componentes")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(componenteRequest)))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message").value("Componente ya existe con codigoInterno: RES-1K-001"));
         }
     }
 

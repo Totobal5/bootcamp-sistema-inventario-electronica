@@ -20,13 +20,13 @@ public class SolicitudArmadoResponse {
     @Schema(description = "ID de la solicitud", example = "1")
     private Long id;
     
-    @Schema(description = "ID de la placa", example = "3")
-    private Long placaId;
+    @Schema(description = "ID del diseño PCB", example = "3")
+    private Long pcbDesignId;
     
-    @Schema(description = "Nombre de la placa", example = "Arduino UNO Clone")
-    private String placaNombre;
+    @Schema(description = "Nombre del diseño PCB", example = "Arduino UNO Clone")
+    private String pcbDesignNombre;
     
-    @Schema(description = "Cantidad de placas a armar", example = "5")
+    @Schema(description = "Cantidad de PCBs a armar", example = "5")
     private Integer cantidad;
     
     @Schema(description = "Observaciones", example = "Urgente - Entrega antes del viernes")

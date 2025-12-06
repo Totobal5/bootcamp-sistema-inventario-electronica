@@ -1,0 +1,11 @@
+Designators,MPN,Quantity,Description,Value,Footprint,Manufacturer
+"C1,C2,C3",GRM188R71H104KA93D,3,Ceramic Capacitor,100nF,0603,Murata
+R1,RC0603FR-0710KL,1,Chip Resistor,10K,0603,Yageo
+R2,RC0603FR-07100RL,1,Chip Resistor,100R,0603,Yageo
+U1,ATMEGA328P-AU,1,Microcontroller,ATMEGA328P,TQFP32,Microchip
+"D1,D2",BAT54C,2,Schottky Diode,BAT54C,SOT23,Infineon
+L1,LQH3NPN100MMEL,1,Power Inductor,10uH,1210,Murata
+C4,CL21B105KBFNNNE,1,Ceramic Capacitor,1uF,0805,Samsung
+U2,LM358DR,1,Operational Amplifier,LM358,SOIC8,Texas Instruments
+Q1,BC847,1,NPN Transistor,BC847,SOT23,Nexperia
+"R3,R4,R5",RC0603FR-071KL,3,Chip Resistor,1K,0603,Yageo

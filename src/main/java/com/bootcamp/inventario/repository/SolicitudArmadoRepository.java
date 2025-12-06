@@ -29,24 +29,24 @@ public interface SolicitudArmadoRepository extends JpaRepository<SolicitudArmado
     List<SolicitudArmado> findByClienteIdAndEstado(Long clienteId, EstadoSolicitud estado);
     
     /**
-     * Busca solicitudes por placa
+     * Busca solicitudes por diseño PCB
      */
-    List<SolicitudArmado> findByPlacaId(Long placaId);
+    List<SolicitudArmado> findByPcbDesignId(Long pcbDesignId);
     
     /**
-     * Busca solicitudes con JOIN FETCH de cliente y placa
+     * Busca solicitudes con JOIN FETCH de cliente y diseño PCB
      */
     @Query("SELECT s FROM SolicitudArmado s " +
            "LEFT JOIN FETCH s.cliente " +
-           "LEFT JOIN FETCH s.placa " +
+           "LEFT JOIN FETCH s.pcbDesign " +
            "WHERE s.id = :id")
     Optional<SolicitudArmado> findByIdWithRelations(@Param("id") Long id);
     
     /**
-     * Busca solicitudes de un cliente con JOIN FETCH de placa
+     * Busca solicitudes de un cliente con JOIN FETCH de diseño PCB
      */
     @Query("SELECT s FROM SolicitudArmado s " +
-           "LEFT JOIN FETCH s.placa " +
+           "LEFT JOIN FETCH s.pcbDesign " +
            "WHERE s.cliente.id = :clienteId")
     List<SolicitudArmado> findByClienteIdWithPlaca(@Param("clienteId") Long clienteId);
     

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diseños PCB - Sistema de Inventario</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        /* Estilos específicos para gestión de revisiones */
+        .revision-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        .badge-draft { background: #ffeaa7; color: #2d3436; }
+        .badge-prototype { background: #74b9ff; color: #2d3436; }
+        .badge-production { background: #55efc4; color: #2d3436; }
+        .badge-deprecated { background: #636e72; color: white; }
+        
+        .revision-list {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .revision-item {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .revision-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .revision-item:last-child {
+            border-bottom: none;
+        }
+        
+        .revision-info {
+            flex: 1;
+        }
+        
+        .revision-code {
+            font-weight: 600;
+            font-size: 16px;
+            color: #2d3436;
+        }
+        
+        .revision-specs {
+            font-size: 13px;
+            color: #636e72;
+            margin-top: 5px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #636e72;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab-button:hover {
+            color: var(--primary-color);
+            background: #f8f9fa;
+        }
+        
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-wide {
+            max-width: 1100px;
+        }
+        
+        .revision-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .locked-icon {
+            color: #fdcb6e;
+            font-size: 18px;
+            margin-left: 8px;
+        }
+        
+        .csv-preview {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 10px;
+            background: #f8f9fa;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .match-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .match-success { background: #00b894; }
+        .match-partial { background: #fdcb6e; }
+        .match-failed { background: #d63031; }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 4px;
+            background: #dfe6e9;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 3px;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #d63031, #fdcb6e, #00b894);
+            transition: width 0.3s;
+        }
+        
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .spec-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .spec-label {
+            font-size: 12px;
+            color: #636e72;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .spec-value {
+            font-size: 16px;
+            color: #2d3436;
+            font-weight: 500;
+        }
+        
+        .drag-drop-area {
+            border: 2px dashed #b2bec3;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .drag-drop-area.dragover {
+            border-color: var(--primary-color);
+            background: #e8f4ff;
+        }
+        
+        .drag-drop-area:hover {
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>⚡ Inventario</h2>
+            <p id="user-info"></p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard">
+                <span class="icon">📊</span> Dashboard
+            </a>
+            <a href="/componentes">
+                <span class="icon">🔌</span> Componentes
+            </a>
+            <a href="/pcb-designs" class="active">
+                <span class="icon">💾</span> Diseños PCB
+            </a>
+            <a href="/solicitudes-mecanizado">
+                <span class="icon">⚙️</span> Mecanizado
+            </a>
+            <a href="/solicitudes-armado">
+                <span class="icon">🔧</span> Armado
+            </a>
+            <a href="/tareas">
+                <span class="icon">✓</span> Tareas
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-danger btn-block">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>💾 Diseños de PCB</h1>
+            <div class="header-actions">
+                <button onclick="openCreateDesignModal()" class="btn btn-primary">
+                    + Nuevo Diseño
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card">
+            <div class="card-body">
+                <div class="filter-row">
+                    <input type="text" id="search-input" placeholder="Buscar diseño..." 
+                           onkeyup="filterDesigns()" class="form-control">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de diseños PCB -->
+        <div class="card">
+            <div class="card-body">
+                <table class="table" id="designs-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Revisiones</th>
+                            <th>Última Revisión</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="designs-tbody">
+                        <tr>
+                            <td colspan="7" class="text-center">Cargando diseños...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Gestión de Revisiones (Principal) -->
+    <div id="revisions-modal" class="modal">
+        <div class="modal-content modal-wide" style="max-width: 1100px;">
+            <div class="modal-header">
+                <h2 id="revisions-modal-title">Revisiones de PCB</h2>
+                <span class="close" onclick="closeRevisionsModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button type="button" class="tab-button active" onclick="switchRevisionTab('list')">
+                        📋 Revisiones
+                    </button>
+                    <button type="button" class="tab-button" onclick="switchRevisionTab('bom')">
+                        📦 Importar BOM
+                    </button>
+                </div>
+
+                <!-- Tab: Lista de Revisiones -->
+                <div id="tab-list" class="tab-content active">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                        <h3>Revisiones Existentes</h3>
+                        <button onclick="openCreateRevisionModal()" class="btn btn-success">
+                            + Nueva Revisión
+                        </button>
+                    </div>
+                    <div id="revisions-list" class="revision-list">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Tab: Importar BOM -->
+                <div id="tab-bom" class="tab-content">
+                    <h3>Importar Bill of Materials (CSV)</h3>
+                    <p class="text-muted">Selecciona una revisión e importa el archivo BOM en formato CSV. 
+                       El sistema vinculará automáticamente los componentes por MPN.</p>
+                    
+                    <div class="form-group">
+                        <label for="revision-selector">Seleccionar Revisión</label>
+                        <select id="revision-selector" class="form-control">
+                            <option value="">-- Seleccionar revisión --</option>
+                        </select>
+                    </div>
+
+                    <div class="drag-drop-area" id="csv-drop-area">
+                        <p style="font-size: 48px; margin: 0;">📄</p>
+                        <p style="font-size: 18px; margin: 10px 0;">
+                            Arrastra el archivo CSV aquí o haz clic para seleccionar
+                        </p>
+                        <p style="font-size: 14px; color: #636e72;">
+                            Formato esperado: Designators, MPN, Quantity, Description, Value, Footprint, Manufacturer
+                        </p>
+                        <input type="file" id="csv-file-input" accept=".csv" style="display: none;" 
+                               onchange="handleCsvFile(event)">
+                    </div>
+
+                    <div id="csv-preview-container" style="display: none; margin-top: 20px;">
+                        <h4>Vista Previa del CSV</h4>
+                        <div id="csv-preview" class="csv-preview"></div>
+                        <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+                            <label>
+                                <input type="checkbox" id="overwrite-bom" />
+                                Sobrescribir BOM existente
+                            </label>
+                            <label style="margin-left: 20px;">
+                                Confianza mínima: 
+                                <input type="number" id="min-confidence" min="0" max="1" step="0.1" 
+                                       value="0.8" style="width: 60px;" />
+                            </label>
+                            <button onclick="confirmBomImport()" class="btn btn-primary" style="margin-left: auto;">
+                                🚀 Importar BOM
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="bom-result" style="margin-top: 20px; display: none;">
+                        <!-- Resultado de importación -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Crear/Editar Revisión -->
+    <div id="revision-form-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="revision-form-title">Nueva Revisión</h2>
+                <span class="close" onclick="closeRevisionFormModal()">&times;</span>
+            </div>
+            <form id="revision-form" onsubmit="handleRevisionSubmit(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="revision-code">Código de Revisión *</label>
+                        <input type="text" id="revision-code" required class="form-control"
+                               placeholder="v1.0, rev-A, 2024-001">
+                    </div>
+
+                    <h4 style="margin-top: 20px; margin-bottom: 15px;">📐 Especificaciones Físicas</h4>
+                    <div class="specs-grid">
+                        <div class="form-group">
+                            <label for="width">Ancho (mm)</label>
+                            <input type="number" id="width" step="0.01" class="form-control" placeholder="100.0">
+                        </div>
+                        <div class="form-group">
+                            <label for="height">Alto (mm)</label>
+                            <input type="number" id="height" step="0.01" class="form-control" placeholder="80.0">
+                        </div>
+                        <div class="form-group">
+                            <label for="layers">Número de Capas</label>
+                            <select id="layers" class="form-control">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="2">2 capas</option>
+                                <option value="4">4 capas</option>
+                                <option value="6">6 capas</option>
+                                <option value="8">8 capas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="thickness">Espesor (mm)</label>
+                            <select id="thickness" class="form-control">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="0.8">0.8mm</option>
+                                <option value="1.0">1.0mm</option>
+                                <option value="1.6" selected>1.6mm (estándar)</option>
+                                <option value="2.0">2.0mm</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h4 style="margin-top: 20px; margin-bottom: 15px;">🎨 Acabados</h4>
+                    <div class="specs-grid">
+                        <div class="form-group">
+                            <label for="finish">Acabado Superficial</label>
+                            <select id="finish" class="form-control">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="HASL">HASL</option>
+                                <option value="LEAD_FREE_HASL">HASL Sin Plomo</option>
+                                <option value="ENIG" selected>ENIG</option>
+                                <option value="IMMERSION_SILVER">Plata por Inmersión</option>
+                                <option value="IMMERSION_TIN">Estaño por Inmersión</option>
+                                <option value="OSP">OSP</option>
+                                <option value="ENEPIG">ENEPIG</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mask-color">Color de Máscara</label>
+                            <select id="mask-color" class="form-control">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="GREEN" selected>Verde</option>
+                                <option value="BLACK">Negro</option>
+                                <option value="RED">Rojo</option>
+                                <option value="BLUE">Azul</option>
+                                <option value="WHITE">Blanco</option>
+                                <option value="YELLOW">Amarillo</option>
+                                <option value="PURPLE">Púrpura</option>
+                                <option value="MATTE_BLACK">Negro Mate</option>
+                                <option value="MATTE_GREEN">Verde Mate</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="material">Material del Sustrato</label>
+                        <input type="text" id="material" class="form-control" placeholder="FR4, Rogers, Aluminio">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="technical-notes">Notas Técnicas</label>
+                        <textarea id="technical-notes" rows="3" class="form-control"
+                                  placeholder="Notas adicionales sobre fabricación..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeRevisionFormModal()" class="btn btn-secondary">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        💾 Guardar Revisión
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Detalles de Revisión (Vista de Especificaciones) -->
+    <div id="revision-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="revision-details-title">Detalles de Revisión</h2>
+                <span class="close" onclick="closeRevisionDetailsModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="revision-details-content">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeRevisionDetailsModal()" class="btn btn-secondary">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/api-client.js}"></script>
+    <script th:src="@{/js/pcb-revisions.js}"></script>
+    <script>
+        checkAuth();
+        document.getElementById('user-info').textContent = localStorage.getItem('username');
+
+        let allDesigns = [];
+
+        // ========== CARGAR DISEÑOS ==========
+        async function loadDesigns() {
+            try {
+                allDesigns = await apiGet('/api/pcb-designs');
+                renderDesigns(allDesigns);
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al cargar diseños', 'error');
+            }
+        }
+
+        function renderDesigns(designs) {
+            const tbody = document.getElementById('designs-tbody');
+            if (designs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay diseños registrados</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = designs.map(design => `
+                <tr>
+                    <td>${design.id}</td>
+                    <td><strong>${design.nombre}</strong></td>
+                    <td>${design.descripcion || '-'}</td>
+                    <td>
+                        <span class="badge badge-info">${design.componentesCount || 0} componentes</span>
+                    </td>
+                    <td>-</td>
+                    <td><span class="badge badge-secondary">-</span></td>
+                    <td>
+                        <button onclick="openRevisionsModal(${design.id}, '${escapeHtml(design.nombre)}')" 
+                                class="btn btn-sm btn-primary">
+                            📋 Ver Revisiones
+                        </button>
+                        <button onclick="editDesign(${design.id})" class="btn btn-sm btn-warning">
+                            ✏️ Editar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterDesigns() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allDesigns.filter(d => 
+                d.nombre.toLowerCase().includes(searchTerm) ||
+                (d.descripcion && d.descripcion.toLowerCase().includes(searchTerm))
+            );
+            renderDesigns(filtered);
+        }
+
+        function openCreateDesignModal() {
+            // TODO: Implementar modal de crear diseño
+            showNotification('Funcionalidad pendiente de implementar', 'info');
+        }
+
+        function editDesign(designId) {
+            // TODO: Implementar edición de diseño
+            showNotification('Funcionalidad pendiente de implementar', 'info');
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Cerrar modales al hacer clic fuera
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        };
+
+        loadDesigns();
+    </script>
+</body>
+</html>

@@ -30,9 +30,9 @@ public interface ISolicitudArmadoService {
     List<SolicitudArmadoResponse> findByClienteId(Long clienteId);
     
     /**
-     * Obtiene solicitudes de una placa específica
+     * Obtiene solicitudes de un diseño PCB específico
      */
-    List<SolicitudArmadoResponse> findByPlacaId(Long placaId);
+    List<SolicitudArmadoResponse> findByPcbDesignId(Long pcbDesignId);
     
     /**
      * Crea una nueva solicitud de armado (solo CLIENTE)

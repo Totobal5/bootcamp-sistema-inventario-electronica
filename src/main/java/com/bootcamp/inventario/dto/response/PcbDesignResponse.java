@@ -10,29 +10,29 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * DTO de respuesta para placas
+ * DTO de respuesta para diseños de PCB
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "Información completa de una placa")
-public class PlacaResponse {
+@Schema(description = "Información completa de un diseño de PCB")
+public class PcbDesignResponse {
 
-    @Schema(description = "ID de la placa", example = "1")
+    @Schema(description = "ID del diseño", example = "1")
     private Long id;
 
-    @Schema(description = "Nombre de la placa", example = "Placa Arduino Uno Compatible")
+    @Schema(description = "Nombre del diseño de PCB", example = "Placa Arduino Uno Compatible")
     private String nombre;
 
-    @Schema(description = "Descripción de la placa")
+    @Schema(description = "Descripción del diseño")
     private String descripcion;
 
     @Schema(description = "URL de la imagen")
     private String imagenUrl;
 
-    @Schema(description = "Lista de componentes necesarios")
-    private List<PlacaComponenteResponse> componentes;
+    @Schema(description = "Lista de componentes necesarios (BOM)")
+    private List<BomEntryResponse> componentes;
 
     @Schema(description = "Indica si todos los componentes están disponibles en stock")
     private Boolean stockDisponible;

@@ -7,14 +7,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO de respuesta para componentes de una placa
+ * DTO de respuesta para entradas del BOM
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "Componente necesario en una placa")
-public class PlacaComponenteResponse {
+@Schema(description = "Componente necesario en el BOM de un diseño PCB")
+public class BomEntryResponse {
 
     @Schema(description = "ID del componente", example = "1")
     private Long componenteId;
@@ -27,6 +27,9 @@ public class PlacaComponenteResponse {
 
     @Schema(description = "Cantidad necesaria", example = "2")
     private Integer cantidadNecesaria;
+
+    @Schema(description = "Designadores del componente", example = "R1,R2,R3")
+    private String designators;
 
     @Schema(description = "Stock disponible del componente", example = "150")
     private Integer stockDisponible;

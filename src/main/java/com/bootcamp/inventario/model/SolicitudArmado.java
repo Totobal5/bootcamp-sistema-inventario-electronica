@@ -36,8 +36,8 @@ public class SolicitudArmado {
     private Usuario cliente;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "placa_id", nullable = false)
-    private Placa placa;
+    @JoinColumn(name = "pcb_design_id", nullable = false)
+    private PcbDesign pcbDesign;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "operador_id")

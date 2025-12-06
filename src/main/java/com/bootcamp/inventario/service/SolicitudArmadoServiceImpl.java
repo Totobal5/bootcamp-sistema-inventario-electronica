@@ -9,7 +9,7 @@ import com.bootcamp.inventario.exception.ResourceNotFoundException;
 import com.bootcamp.inventario.model.*;
 import com.bootcamp.inventario.model.enums.EstadoSolicitud;
 import com.bootcamp.inventario.repository.ComponenteElectronicoRepository;
-import com.bootcamp.inventario.repository.PlacaRepository;
+import com.bootcamp.inventario.repository.PcbDesignRepository;
 import com.bootcamp.inventario.repository.SolicitudArmadoRepository;
 import com.bootcamp.inventario.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class SolicitudArmadoServiceImpl implements ISolicitudArmadoService {
 
     private final SolicitudArmadoRepository solicitudRepository;
     private final UsuarioRepository usuarioRepository;
-    private final PlacaRepository placaRepository;
+    private final PcbDesignRepository pcbDesignRepository;
     private final ComponenteElectronicoRepository componenteRepository;
 
     @Override
@@ -68,9 +68,9 @@ public class SolicitudArmadoServiceImpl implements ISolicitudArmadoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SolicitudArmadoResponse> findByPlacaId(Long placaId) {
-        log.debug("Buscando solicitudes de la placa: {}", placaId);
-        return solicitudRepository.findByPlacaId(placaId).stream()
+    public List<SolicitudArmadoResponse> findByPcbDesignId(Long pcbDesignId) {
+        log.debug("Buscando solicitudes del diseño PCB: {}", pcbDesignId);
+        return solicitudRepository.findByPcbDesignId(pcbDesignId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -84,22 +84,22 @@ public class SolicitudArmadoServiceImpl implements ISolicitudArmadoService {
         Usuario cliente = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", "username", username));
         
-        // Buscar la placa con sus componentes
-        Placa placa = placaRepository.findByIdWithComponentes(request.getPlacaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Placa", "id", request.getPlacaId()));
+        // Buscar el diseño de PCB con sus componentes
+        PcbDesign pcbDesign = pcbDesignRepository.findByIdWithComponentes(request.getPcbDesignId())
+                .orElseThrow(() -> new ResourceNotFoundException("PcbDesign", "id", request.getPcbDesignId()));
         
         // Validar que haya stock suficiente
-        boolean stockDisponible = verificarStockDisponible(placa, request.getCantidad());
+        boolean stockDisponible = verificarStockDisponible(pcbDesign, request.getCantidad());
         if (!stockDisponible) {
             throw new InsufficientStockException(
                 "No hay stock suficiente de componentes para armar " + request.getCantidad() + 
-                " unidades de la placa '" + placa.getNombre() + "'"
+                " unidades del diseño PCB '" + pcbDesign.getNombre() + "'"
             );
         }
         
         // Crear la solicitud
         SolicitudArmado solicitud = SolicitudArmado.builder()
-                .placa(placa)
+                .pcbDesign(pcbDesign)
                 .cantidad(request.getCantidad())
                 .observaciones(request.getObservaciones())
                 .estado(EstadoSolicitud.PENDIENTE)
@@ -142,23 +142,23 @@ public class SolicitudArmadoServiceImpl implements ISolicitudArmadoService {
             throw new BadRequestException("Solo se pueden confirmar solicitudes en estado EN_PROCESO");
         }
         
-        // Cargar componentes de la placa
-        Placa placa = placaRepository.findByIdWithComponentes(solicitud.getPlaca().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Placa", "id", solicitud.getPlaca().getId()));
+        // Cargar componentes del diseño PCB
+        PcbDesign pcbDesign = pcbDesignRepository.findByIdWithComponentes(solicitud.getPcbDesign().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("PcbDesign", "id", solicitud.getPcbDesign().getId()));
         
         // Verificar stock disponible nuevamente (por seguridad)
-        boolean stockDisponible = verificarStockDisponible(placa, solicitud.getCantidad());
+        boolean stockDisponible = verificarStockDisponible(pcbDesign, solicitud.getCantidad());
         if (!stockDisponible) {
             throw new InsufficientStockException(
                 "No hay stock suficiente para confirmar el armado de " + solicitud.getCantidad() + 
-                " unidades de la placa '" + placa.getNombre() + "'"
+                " unidades del diseño PCB '" + pcbDesign.getNombre() + "'"
             );
         }
         
         // Descontar stock de componentes
-        for (PlacaComponente pc : placa.getComponentes()) {
-            ComponenteElectronico componente = pc.getComponente();
-            int stockNecesario = pc.getCantidadNecesaria() * solicitud.getCantidad();
+        for (BomEntry be : pcbDesign.getComponentes()) {
+            ComponenteElectronico componente = be.getComponente();
+            int stockNecesario = be.getQuantity() * solicitud.getCantidad();
             
             componente.setStockActual(componente.getStockActual() - stockNecesario);
             componenteRepository.save(componente);
@@ -199,14 +199,14 @@ public class SolicitudArmadoServiceImpl implements ISolicitudArmadoService {
     /**
      * Verifica si hay stock suficiente para armar la cantidad solicitada
      */
-    private boolean verificarStockDisponible(Placa placa, int cantidad) {
-        for (PlacaComponente pc : placa.getComponentes()) {
-            int stockNecesario = pc.getCantidadNecesaria() * cantidad;
-            int stockDisponible = pc.getComponente().getStockActual();
+    private boolean verificarStockDisponible(PcbDesign pcbDesign, int cantidad) {
+        for (BomEntry be : pcbDesign.getComponentes()) {
+            int stockNecesario = be.getQuantity() * cantidad;
+            int stockDisponible = be.getComponente().getStockActual();
             
             if (stockDisponible < stockNecesario) {
                 log.warn("Stock insuficiente del componente '{}': necesario={}, disponible={}",
-                        pc.getComponente().getNombre(), stockNecesario, stockDisponible);
+                        be.getComponente().getNombre(), stockNecesario, stockDisponible);
                 return false;
             }
         }
@@ -242,11 +242,11 @@ public class SolicitudArmadoServiceImpl implements ISolicitudArmadoService {
      */
     private SolicitudArmadoResponse mapToResponse(SolicitudArmado solicitud) {
         // Verificar stock disponible
-        Placa placa = solicitud.getPlaca();
+        PcbDesign pcbDesign = solicitud.getPcbDesign();
         boolean stockDisponible = false;
         
-        if (placa.getComponentes() != null && !placa.getComponentes().isEmpty()) {
-            stockDisponible = verificarStockDisponible(placa, solicitud.getCantidad());
+        if (pcbDesign.getComponentes() != null && !pcbDesign.getComponentes().isEmpty()) {
+            stockDisponible = verificarStockDisponible(pcbDesign, solicitud.getCantidad());
         }
         
         // Mapear certificaciones si existen
@@ -264,8 +264,8 @@ public class SolicitudArmadoServiceImpl implements ISolicitudArmadoService {
         
         return SolicitudArmadoResponse.builder()
                 .id(solicitud.getId())
-                .placaId(placa.getId())
-                .placaNombre(placa.getNombre())
+                .pcbDesignId(pcbDesign.getId())
+                .pcbDesignNombre(pcbDesign.getNombre())
                 .cantidad(solicitud.getCantidad())
                 .observaciones(solicitud.getObservaciones())
                 .estado(solicitud.getEstado())
