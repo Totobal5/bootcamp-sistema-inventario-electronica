@@ -200,7 +200,7 @@ public class ArchivoCertificacionServiceImpl implements IArchivoCertificacionSer
                 .tamanoBytes(archivo.getTamanoBytes())
                 .archivoUrl(archivo.getArchivoUrl())
                 .solicitudArmadoId(archivo.getSolicitudArmado().getId())
-                .placaNombre(archivo.getSolicitudArmado().getPlaca().getNombre())
+                .placaNombre(archivo.getSolicitudArmado().getPcbDesign().getNombre())
                 .cantidadPlacas(archivo.getSolicitudArmado().getCantidad())
                 .fechaCreacion(archivo.getFechaCreacion())
                 .build();

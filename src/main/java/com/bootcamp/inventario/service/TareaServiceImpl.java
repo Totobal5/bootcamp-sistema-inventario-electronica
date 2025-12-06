@@ -258,7 +258,7 @@ public class TareaServiceImpl implements ITareaService {
                 .estado(tarea.getEstado())
                 .observaciones(tarea.getObservaciones())
                 .solicitudArmadoId(tarea.getSolicitudArmado().getId())
-                .placaNombre(tarea.getSolicitudArmado().getPlaca().getNombre())
+                .placaNombre(tarea.getSolicitudArmado().getPcbDesign().getNombre())
                 .cantidadPlacas(tarea.getSolicitudArmado().getCantidad())
                 .operadorId(tarea.getOperador().getId())
                 .operadorUsername(tarea.getOperador().getUsername())
