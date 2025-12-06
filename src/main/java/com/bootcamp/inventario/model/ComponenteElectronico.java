@@ -35,11 +35,16 @@ public class ComponenteElectronico {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @NotNull(message = "El stock es obligatorio")
+    @NotNull(message = "El stock actual es obligatorio")
     @Min(value = 0, message = "El stock no puede ser negativo")
     @Column(nullable = false)
     @Builder.Default
-    private Integer stock = 0;
+    private Integer stockActual = 0;
+
+    @Min(value = 0, message = "El stock mínimo no puede ser negativo")
+    @Column
+    @Builder.Default
+    private Integer stockMinimo = 0;
 
     @Size(max = 50, message = "La categoría no puede exceder 50 caracteres")
     @Column(length = 50)
@@ -48,7 +53,11 @@ public class ComponenteElectronico {
     @DecimalMin(value = "0.0", inclusive = true, message = "El precio debe ser mayor o igual a 0")
     @Digits(integer = 10, fraction = 2, message = "El precio debe tener máximo 10 dígitos enteros y 2 decimales")
     @Column(precision = 10, scale = 2)
-    private BigDecimal precio;
+    private BigDecimal precioUnitario;
+
+    @Size(max = 100, message = "La ubicación no puede exceder 100 caracteres")
+    @Column(length = 100)
+    private String ubicacion;
 
     @Column(length = 255)
     private String imagenUrl;

@@ -160,12 +160,12 @@ public class SolicitudArmadoServiceImpl implements ISolicitudArmadoService {
             ComponenteElectronico componente = pc.getComponente();
             int stockNecesario = pc.getCantidadNecesaria() * solicitud.getCantidad();
             
-            componente.setStock(componente.getStock() - stockNecesario);
+            componente.setStockActual(componente.getStockActual() - stockNecesario);
             componenteRepository.save(componente);
             
             log.info("Stock del componente '{}' reducido en {} unidades (de {} a {})",
                     componente.getNombre(), stockNecesario, 
-                    componente.getStock() + stockNecesario, componente.getStock());
+                    componente.getStockActual() + stockNecesario, componente.getStockActual());
         }
         
         // Cambiar estado a COMPLETADO
@@ -202,7 +202,7 @@ public class SolicitudArmadoServiceImpl implements ISolicitudArmadoService {
     private boolean verificarStockDisponible(Placa placa, int cantidad) {
         for (PlacaComponente pc : placa.getComponentes()) {
             int stockNecesario = pc.getCantidadNecesaria() * cantidad;
-            int stockDisponible = pc.getComponente().getStock();
+            int stockDisponible = pc.getComponente().getStockActual();
             
             if (stockDisponible < stockNecesario) {
                 log.warn("Stock insuficiente del componente '{}': necesario={}, disponible={}",

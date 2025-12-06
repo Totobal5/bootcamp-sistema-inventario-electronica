@@ -73,9 +73,11 @@ public class ComponenteServiceImpl implements IComponenteService {
         ComponenteElectronico componente = ComponenteElectronico.builder()
                 .nombre(request.getNombre())
                 .descripcion(request.getDescripcion())
-                .stock(request.getStock())
+                .stockActual(request.getStockActual())
+                .stockMinimo(request.getStockMinimo() != null ? request.getStockMinimo() : 0)
                 .categoria(request.getCategoria())
-                .precio(request.getPrecio())
+                .precioUnitario(request.getPrecioUnitario())
+                .ubicacion(request.getUbicacion())
                 .imagenUrl(request.getImagenUrl())
                 .build();
 
@@ -102,9 +104,11 @@ public class ComponenteServiceImpl implements IComponenteService {
 
         componente.setNombre(request.getNombre());
         componente.setDescripcion(request.getDescripcion());
-        componente.setStock(request.getStock());
+        componente.setStockActual(request.getStockActual());
+        componente.setStockMinimo(request.getStockMinimo() != null ? request.getStockMinimo() : 0);
         componente.setCategoria(request.getCategoria());
-        componente.setPrecio(request.getPrecio());
+        componente.setPrecioUnitario(request.getPrecioUnitario());
+        componente.setUbicacion(request.getUbicacion());
         componente.setImagenUrl(request.getImagenUrl());
 
         ComponenteElectronico updated = componenteRepository.save(componente);
@@ -136,7 +140,7 @@ public class ComponenteServiceImpl implements IComponenteService {
             throw new IllegalArgumentException("El stock no puede ser negativo");
         }
 
-        componente.setStock(cantidad);
+        componente.setStockActual(cantidad);
         ComponenteElectronico updated = componenteRepository.save(componente);
         log.info("Stock actualizado para componente {}: {}", id, cantidad);
         return mapToResponse(updated);
@@ -150,9 +154,11 @@ public class ComponenteServiceImpl implements IComponenteService {
                 .id(componente.getId())
                 .nombre(componente.getNombre())
                 .descripcion(componente.getDescripcion())
-                .stock(componente.getStock())
+                .stockActual(componente.getStockActual())
+                .stockMinimo(componente.getStockMinimo())
                 .categoria(componente.getCategoria())
-                .precio(componente.getPrecio())
+                .precioUnitario(componente.getPrecioUnitario())
+                .ubicacion(componente.getUbicacion())
                 .imagenUrl(componente.getImagenUrl())
                 .createdAt(componente.getCreatedAt())
                 .updatedAt(componente.getUpdatedAt())

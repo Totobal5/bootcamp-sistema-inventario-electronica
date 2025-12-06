@@ -29,14 +29,20 @@ public class ComponenteResponse {
             example = "Resistencia de carbón 1/4W, tolerancia 5%")
     private String descripcion;
 
-    @Schema(description = "Cantidad en stock", example = "150")
-    private Integer stock;
+    @Schema(description = "Cantidad actual en stock", example = "150")
+    private Integer stockActual;
+
+    @Schema(description = "Stock mínimo de alerta", example = "10")
+    private Integer stockMinimo;
 
     @Schema(description = "Categoría", example = "Resistencias")
     private String categoria;
 
     @Schema(description = "Precio unitario", example = "50.00")
-    private BigDecimal precio;
+    private BigDecimal precioUnitario;
+
+    @Schema(description = "Ubicación física en almacén", example = "Estante A-3")
+    private String ubicacion;
 
     @Schema(description = "URL de la imagen")
     private String imagenUrl;
